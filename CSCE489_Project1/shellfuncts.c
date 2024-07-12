@@ -4,6 +4,8 @@
  *************************************************************************************/
 
 #include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include "shellfuncts.h"
 
 /*************************************************************************************
@@ -17,15 +19,19 @@
  *
  *************************************************************************************/
 
-int hello(int param1) {
-	// I'm commenting to explain that this checks param and changes the message
-	if (param1 == 1)
-		send_msg("Hello world!\n");
-	else
-		send_msg("G'day world!\n");
-
-	// Return 1 because, why not.
-	return 1;
+void select_command(int cmd_num){
+	switch(cmd_num){
+		case 0:
+			break;
+		case 1:
+			break;
+		case 2:
+			break;
+		case 3:
+			break;
+		case 4:
+			halt();
+	}
 }
 
 /*************************************************************************************
@@ -37,7 +43,6 @@ int hello(int param1) {
  *
  *************************************************************************************/
 
-void send_msg(const char *param2) {
-	printf("%s", param2);
+void halt(){
+	exit(0);
 }
-
