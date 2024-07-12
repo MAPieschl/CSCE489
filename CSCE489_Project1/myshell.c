@@ -94,7 +94,7 @@ void run_cmd()
     {
         if (strcmp(AVAILABLE_CMDS[cmd_index], current_cmd.parsed[0]) == 0)
         {
-            select_command(cmd_index);
+            select_command(cmd_index, current_cmd.parsed);
             return;
         }
         else if (cmd_index >= (int)NUM_CMDS - 1)
