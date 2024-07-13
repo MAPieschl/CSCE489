@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-ggdb -Wall -Wextra -O0
 DEPS = shellfuncts.h
-OBJ = myshell.o shellfuncts.o 
+OBJ = myshell.o shellfuncts.o -lm
 
 %.o: %.c $(DEPS)
 	$(CC) $(CFLAGS) -c -o $@ $<

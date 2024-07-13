@@ -22,9 +22,8 @@
  *************************************************************************************/
 
 void select_command(int cmd_num, char cmd[MAX_NUM_ARGS][MAX_SIZE_ARGS]);
-void create(char name[MAX_NUM_ARGS]);
-void create(char name[MAX_NUM_ARGS]);
-void update(char name[MAX_NUM_ARGS], char number[MAX_NUM_ARGS], char text[MAX_NUM_ARGS]);
-void list(char name[MAX_NUM_ARGS]);
+void create(char name[MAX_SIZE_ARGS]);
+void update(char name[MAX_SIZE_ARGS], char number[MAX_SIZE_ARGS], char text[MAX_SIZE_ARGS]);
+void list(char name[MAX_SIZE_ARGS]);
 void dir();
 void halt();

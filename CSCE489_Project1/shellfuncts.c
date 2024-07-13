@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <math.h>
 #include "shellfuncts.h"
 
 /*************************************************************************************
@@ -48,8 +50,20 @@ void select_command(int cmd_num, char cmd[MAX_NUM_ARGS][MAX_SIZE_ARGS]){
  *
  *************************************************************************************/
 
-void create(char name[MAX_NUM_ARGS]){
-	printf("%s", name);
+void create(char name[MAX_SIZE_ARGS]){
+	FILE *newFile;
+	newFile = fopen(name, "r");
+	
+	if(newFile == NULL){
+		newFile = fopen(name, "w");
+		fclose(newFile);
+		exit(0);
+	}
+	else{
+		printf("\nFile already exists!");
+		fclose(newFile);
+		exit(1);
+	}
 }
 
 /*************************************************************************************
@@ -61,10 +75,48 @@ void create(char name[MAX_NUM_ARGS]){
  *
  *************************************************************************************/
 
-void update(char name[MAX_NUM_ARGS], char number[MAX_NUM_ARGS], char text[MAX_NUM_ARGS]){
-	printf("%s", name);
-	printf("%s", number);
+void update(char name[MAX_SIZE_ARGS], char number[MAX_SIZE_ARGS], char text[MAX_SIZE_ARGS]){
+
 	printf("%s", text);
+
+	int numMaxIndex;
+	int tempVal;
+	int numIterations = 0;
+	char tempString[MAX_SIZE_ARGS];
+	int tempStringIndex = 0;
+
+	FILE *modFile;
+	modFile = fopen(name, "a");
+	
+	for (int i = 0; i < MAX_SIZE_ARGS; i++){
+		if(number[i] != '\0'){
+			numMaxIndex = i;
+		}
+		else{
+			break;
+		}
+	}
+	
+	for (int i = 0; i <= numMaxIndex; i++){
+		tempVal = (number[i] - 0x30)*pow(10.0, (double) numMaxIndex - i);
+		numIterations += tempVal;
+	}
+	
+	for (int i = 0; i < MAX_SIZE_ARGS; i++){
+		if(text[i] == '\0'){
+			break;
+		}
+		else if(text[i] != '"'){
+			tempString[tempStringIndex] = text[i];
+			tempStringIndex++;
+		}
+	}
+	
+	for (int i = 0; i < numIterations; i++){
+		fprintf(modFile, "%s\n", tempString);
+	}
+	
+	exit(0);
 }
 
 /*************************************************************************************
@@ -76,7 +128,7 @@ void update(char name[MAX_NUM_ARGS], char number[MAX_NUM_ARGS], char text[MAX_NU
  *
  *************************************************************************************/
 
-void list(char name[MAX_NUM_ARGS]){
+void list(char name[MAX_SIZE_ARGS]){
 	printf("%s", name);
 }
 
@@ -103,5 +155,7 @@ void dir(){
  *************************************************************************************/
 
 void halt(){
+	pid_t parent_pid = getppid();
+	kill(parent_pid, SIGKILL);
 	exit(0);
 }

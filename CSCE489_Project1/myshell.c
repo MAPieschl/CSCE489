@@ -9,13 +9,16 @@
  *************************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include "shellfuncts.h"
 
 
 // Commands available for execution
-//	- If a command function is added, it must be added to this list to be
+//	- If a com mand function is added, it must be added to this list to be
 //	  recognized by the shell interface
 const char AVAILABLE_CMDS[5][7] = {"create", "update", "list", "dir", "halt"};
 
@@ -34,15 +37,25 @@ void parse_cmd(char raw_cmd[INPUT_BUFFER_SIZE], char parsed_cmd[MAX_NUM_ARGS][MA
     char temp_arg[64];
     int char_index = 0;
     int arg_index = 0;
+    int inside_quotes = 0;
 
     for (int i = 0; i < INPUT_BUFFER_SIZE; i++)
     {
         if (raw_cmd[i] != '\0' && raw_cmd[i] != ' ')
         {
+        	// Add value to temporary argument string
             temp_arg[char_index] = raw_cmd[i];
             char_index++;
+            
+            // Quotation blocker to prevent parsing inside of quotation marks
+            if(raw_cmd[i] == '"'){
+            	printf("The current argument is %s // inside_quotes is %d", temp_arg, inside_quotes);
+            	if(inside_quotes == 0){inside_quotes = 1;}
+            	else {inside_quotes = 0;}
+            	printf("inside_quotes changed to %d", inside_quotes);
+            }
         }
-        else if (raw_cmd[i] == ' ')
+        else if (raw_cmd[i] == ' ' && inside_quotes != 1)
         {
             // Copy completed arg into parsed_cmd
             strcpy(parsed_cmd[arg_index], temp_arg);
@@ -73,29 +86,59 @@ void parse_cmd(char raw_cmd[INPUT_BUFFER_SIZE], char parsed_cmd[MAX_NUM_ARGS][MA
 void run_cmd()
 {
     struct Command current_cmd;
+    char old_chars;
+    pid_t pid_child;
+    int child_status;
 
     // Request & read command
     printf("\n>> ");
     scanf("%[^\n]", current_cmd.raw);
-
+    
     // The following code snippet is commonly reused for clearing the input buffer. Sites utilized for finding and understanding the snippet are:
     //  https://www.geeksforgeeks.org/clearing-the-input-buffer-in-cc/
     //  https://stackoverflow.com/questions/40554617/while-getchar-n
 
     // Clear input buffer for next iteration
-    char old_chars;
     while ((old_chars = getchar()) != '\n')
-        ;
+    ;
 
     // Parse command
     parse_cmd(current_cmd.raw, current_cmd.parsed);
+    
+    pid_child = fork();
+    
+    if(pid_child != 0){
+		for(int i = 0; i < MAX_NUM_ARGS; i++){
+			if(strcmp(current_cmd.parsed[i], "&") == 0){
+				printf("\n[] %d", pid_child);
+				return;
+			}
+		}
+		
+		// The wait() flow below was derived from:
+		// https://www.geeksforgeeks.org/wait-system-call-c/
+		
+    	wait(&child_status);
+    	
+    	if(WIFEXITED(child_status)){
+    	
+    		if(child_status == 0){
+    			printf("\n'%s' completed successfully!\n", current_cmd.parsed[0]);
+    		}
+    		else{
+    			printf("\n'%s' failed :(\n", current_cmd.parsed[0]);
+    		}
+    	}
+    	
+    	return;
+    }
 
     for (int cmd_index = 0; cmd_index < (int)NUM_CMDS; cmd_index++)
     {
         if (strcmp(AVAILABLE_CMDS[cmd_index], current_cmd.parsed[0]) == 0)
         {
             select_command(cmd_index, current_cmd.parsed);
-            return;
+            exit(1);
         }
         else if (cmd_index >= (int)NUM_CMDS - 1)
         {
@@ -107,6 +150,10 @@ void run_cmd()
 
 int main()
 {
+    pid_t pid_shell = getpid();
+    
+    printf("Welcome to myShell! Your current process ID is %d", pid_shell);
+    
     for (int i = 0; i < 10; i++)
     {
         run_cmd();
