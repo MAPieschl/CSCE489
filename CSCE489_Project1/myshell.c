@@ -41,7 +41,7 @@ void parse_cmd(char raw_cmd[INPUT_BUFFER_SIZE], char parsed_cmd[MAX_NUM_ARGS][MA
 
     for (int i = 0; i < INPUT_BUFFER_SIZE; i++)
     {
-        if (raw_cmd[i] != '\0' && raw_cmd[i] != ' ')
+        if ((raw_cmd[i] != '\0' && raw_cmd[i] != ' ') || inside_quotes != 0)
         {
         	// Add value to temporary argument string
             temp_arg[char_index] = raw_cmd[i];
@@ -49,13 +49,11 @@ void parse_cmd(char raw_cmd[INPUT_BUFFER_SIZE], char parsed_cmd[MAX_NUM_ARGS][MA
             
             // Quotation blocker to prevent parsing inside of quotation marks
             if(raw_cmd[i] == '"'){
-            	printf("The current argument is %s // inside_quotes is %d", temp_arg, inside_quotes);
             	if(inside_quotes == 0){inside_quotes = 1;}
             	else {inside_quotes = 0;}
-            	printf("inside_quotes changed to %d", inside_quotes);
             }
         }
-        else if (raw_cmd[i] == ' ' && inside_quotes != 1)
+        else if (raw_cmd[i] == ' ')
         {
             // Copy completed arg into parsed_cmd
             strcpy(parsed_cmd[arg_index], temp_arg);
@@ -110,7 +108,7 @@ void run_cmd()
     if(pid_child != 0){
 		for(int i = 0; i < MAX_NUM_ARGS; i++){
 			if(strcmp(current_cmd.parsed[i], "&") == 0){
-				printf("\n[] %d", pid_child);
+				printf("\n[] %d\n", pid_child);
 				return;
 			}
 		}
@@ -123,10 +121,10 @@ void run_cmd()
     	if(WIFEXITED(child_status)){
     	
     		if(child_status == 0){
-    			printf("\n'%s' completed successfully!\n", current_cmd.parsed[0]);
+    			printf("\n'%s' completed successfully by PID %d!\n", current_cmd.parsed[0], pid_child);
     		}
     		else{
-    			printf("\n'%s' failed :(\n", current_cmd.parsed[0]);
+    			printf("\n'%s' failed by PID %d :(\n", current_cmd.parsed[0], pid_child);
     		}
     	}
     	
