@@ -12,20 +12,19 @@
 #include "shellfuncts.h"
 
 /*************************************************************************************
- * hello - sends hello world to the user! I'm doing proper function commenting so future
- *         coders might not find my code as painful.
+ * select_command - parses command and applies error checking to arguments
  *
- *		Params:	param1 - I explain my parameters, like this is 1 for American, 2 for
- *                      Australian
+ *		Params:	cmd_num - index of command in AVAILABLE_CMDS
+ 			cmd[][] - command.parsed
  *
- *		Returns: always returns 1, no matter what. Fairly useless.
+ *		Returns: void
  *
  *************************************************************************************/
 
 void select_command(int cmd_num, char cmd[MAX_NUM_ARGS][MAX_SIZE_ARGS]){
 	int error_check = 0;
 	switch(cmd_num){
-		case 0:
+		case CREATE:
 			error_check = file_name_check(cmd[1]);
 			if(error_check != 0){exit(1);}
 			error_check = file_exists_check(cmd[1]);
@@ -36,7 +35,7 @@ void select_command(int cmd_num, char cmd[MAX_NUM_ARGS][MAX_SIZE_ARGS]){
 			
 			create(cmd[1]);
 			break;
-		case 1:
+		case UPDATE:
 			error_check = file_exists_check(cmd[1]);
 			if(error_check != 1){
 				printf("\nFile does not exist. Please use - create <file name> - to create a file prior to attempting to write to the file.");
@@ -48,7 +47,7 @@ void select_command(int cmd_num, char cmd[MAX_NUM_ARGS][MAX_SIZE_ARGS]){
 			
 			update(cmd[1], error_check, cmd[3]);
 			break;
-		case 2:
+		case LIST:
 			error_check = file_exists_check(cmd[1]);
 			if(error_check != 1){
 				printf("\nFile does not exist. Please use - create <file name> - to create a file prior to attempting to write to the file.");
@@ -57,10 +56,10 @@ void select_command(int cmd_num, char cmd[MAX_NUM_ARGS][MAX_SIZE_ARGS]){
 		
 			list(cmd[1]);
 			break;
-		case 3:
+		case DIR:
 			dir();
 			break;
-		case 4:
+		case HALT:
 			halt();
 			break;
 	}
@@ -70,6 +69,21 @@ void select_command(int cmd_num, char cmd[MAX_NUM_ARGS][MAX_SIZE_ARGS]){
  * ERROR CHECKING FUNCTIONS
  *************************************************************************************/
 
+/*************************************************************************************
+ * file_name_check - 	ensures file name provided meets UNIX specifications IAW:
+ * 
+ *			https://learning.oreilly.com/library/view/learning-the-unix/1565923901/ch04s02.html#:~:text=Filenames%20are%20usually%20made%20of,%2C%20dot%2C%20and%20underscore%20characters.
+ *
+ *			The function does not check for file name length; it is only
+ *			limited by MAX_SIZE_ARGS (defualt - 64 characters)
+ *
+ *		Params:	name[] - file name
+ *
+ *		Returns: int - 	0 -> file name is acceptable
+ 				1 -> file name is unacceptable
+ *
+ *************************************************************************************/
+ 
 int file_name_check(char name[MAX_SIZE_ARGS]){
 	for(int i = 0; i < MAX_SIZE_ARGS; i++){
 		if(name[i] == '\0'){
@@ -82,6 +96,16 @@ int file_name_check(char name[MAX_SIZE_ARGS]){
 	}
 	return 0;
 }
+
+/*************************************************************************************
+ * file_exists_check - 	checks to see if file exists
+ *
+ *		Params:	name[] - file name
+ *
+ *		Returns: int - 	0 -> file does not exist
+ 				1 -> file exists
+ *
+ *************************************************************************************/
 
 int file_exists_check(char name[MAX_SIZE_ARGS]){
 	int file_exists = 0;
@@ -101,6 +125,16 @@ int file_exists_check(char name[MAX_SIZE_ARGS]){
 	
 	return file_exists;
 }
+
+/*************************************************************************************
+ * number_format_check - takes a number as a string, ensures it is a positive integer value,
+ *			 and returns the number as an integer
+ *
+ *		Params:	number[] - string value for number
+ *
+ *		Returns: int - 	number converted to type integer
+ *
+ *************************************************************************************/
 
 int number_format_check(char number[MAX_SIZE_ARGS]){
 	int num_max_index;
@@ -137,31 +171,36 @@ int number_format_check(char number[MAX_SIZE_ARGS]){
  * TERMINAL FUNCTIONS
  *************************************************************************************/
 
-
 /*************************************************************************************
- * hello - sends hello world to the user! I'm doing proper function commenting so future
- *         coders might not find my code as painful.
+ * create -	creates a file in teh current directory using the file name provided
  *
- *    Params:  param2 - not a very good parameter name - something better might be
- *                      say, msgstr or sendtext
+ *		Params:	name[] - file name
+ *
+ *		Returns: void (exits process with return code 0)
  *
  *************************************************************************************/
-
+ 
 void create(char name[MAX_SIZE_ARGS]){
 	FILE *new_file;
 	new_file = fopen(name, "w");
 	fclose(new_file);
 	
 	exit(0);
-
 }
 
 /*************************************************************************************
- * hello - sends hello world to the user! I'm doing proper function commenting so future
- *         coders might not find my code as painful.
+ * update -	updates a file given the file name, the number of times a string shall
+ *		be added to the file, and the string to be added
  *
- *    Params:  param2 - not a very good parameter name - something better might be
- *                      say, msgstr or sendtext
+ *		Note:  If the string to be added to the file is placed in quotations,
+ *		there is no word limit. If quotations are not used, only the first word
+ *		in the argument will be added to the file.
+ *
+ *		Params:	name[] - file name
+ *			number - number of times argument 3 shall be appended to the file
+ 			text[] - word or phrase to be appended to the file
+ *
+ *		Returns: void (exits process with return code 0)
  *
  *************************************************************************************/
 

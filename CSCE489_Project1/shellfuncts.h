@@ -3,6 +3,9 @@
  *
  *************************************************************************************/
 
+#ifndef SHELL_FUNCTS_H
+#define SHELL_FUNCTS_H
+
 /*************************************************************************************
  *  Constant definitions
  *************************************************************************************/
@@ -15,6 +18,13 @@
 
 // Maximum size of each argument (in characters)
 #define MAX_SIZE_ARGS 64
+
+// Used for convenience to index AVAILABLE_CMDS in shellfuncts.c
+//	- Any new commands must be added to:
+//		-- AVAILABLE_CMDS (myshell.c)
+//		-- AVAILABLE_CMDS_INDEXER (shellfuncts.h)
+//		-- select_command() (shellfncts.c)
+enum AVAILABLE_CMDS_INDEXER {CREATE, UPDATE, LIST, DIR, HALT};
 
 
 /*************************************************************************************
@@ -30,3 +40,5 @@ void update(char name[MAX_SIZE_ARGS], int number, char text[MAX_SIZE_ARGS]);
 void list(char name[MAX_SIZE_ARGS]);
 void dir();
 void halt();
+
+#endif

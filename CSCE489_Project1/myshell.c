@@ -18,7 +18,7 @@
 
 
 // Commands available for execution
-//	- If a com mand function is added, it must be added to this list to be
+//	- If a command function is added, it must be added to this list to be
 //	  recognized by the shell interface
 const char AVAILABLE_CMDS[5][7] = {"create", "update", "list", "dir", "halt"};
 
