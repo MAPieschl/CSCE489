@@ -83,10 +83,10 @@ void parse_cmd(char raw_cmd[INPUT_BUFFER_SIZE], char parsed_cmd[MAX_NUM_ARGS][MA
 
 void run_cmd()
 {
-    struct Command current_cmd;
+    struct Command current_cmd = {0};
     char old_chars;
     pid_t pid_child;
-    int child_status;
+    int child_status = 0;
 
     // Request & read command
     printf("\n>> ");
@@ -106,17 +106,17 @@ void run_cmd()
     pid_child = fork();
     
     if(pid_child != 0){
-		for(int i = 0; i < MAX_NUM_ARGS; i++){
-			if(strcmp(current_cmd.parsed[i], "&") == 0){
-				printf("\n[] %d\n", pid_child);
-				return;
-			}
+	for(int i = 0; i < MAX_NUM_ARGS; i++){
+		if(strcmp(current_cmd.parsed[i], "&") == 0){
+			printf("\n[] %d\n", pid_child);
+			return;
 		}
-		
-		// The wait() flow below was derived from:
-		// https://www.geeksforgeeks.org/wait-system-call-c/
-		
-    	wait(&child_status);
+	}
+	
+	// The wait() flow below was derived from:
+	// https://www.geeksforgeeks.org/wait-system-call-c/ and modified using info
+	// from `man wait` to specify child pid
+    	waitpid(pid_child, &child_status, 0);
     	
     	if(WIFEXITED(child_status)){
     	
