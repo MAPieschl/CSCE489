@@ -28,7 +28,6 @@ void select_command(int cmd_num, char cmd[MAX_NUM_ARGS][MAX_SIZE_ARGS]){
 		case 0:
 			error_check = file_name_check(cmd[1]);
 			if(error_check != 0){exit(1);}
-			
 			error_check = file_exists_check(cmd[1]);
 			if(error_check != 0){
 				printf("\nFile already exists. Please choose a different name.");
@@ -71,25 +70,24 @@ void select_command(int cmd_num, char cmd[MAX_NUM_ARGS][MAX_SIZE_ARGS]){
  * ERROR CHECKING FUNCTIONS
  *************************************************************************************/
 
-int file_name_check(char name[MAX_SIZE_ARGS){
+int file_name_check(char name[MAX_SIZE_ARGS]){
 	for(int i = 0; i < MAX_SIZE_ARGS; i++){
-		if(cmd[1][i] == '\0'){
+		if(name[i] == '\0'){
 			break;
 		}
-		else if(cmd[1][i] == '/' || cmd[1][i] == 0){
-			printf("\nCould not create file - illegal symbols present in ")
+		else if(name[i] == '/' || name[i] == 0){
+			printf("\nCould not create file - illegal symbols present in %s", name);
 			return 1;
 		}
 	}
-	
 	return 0;
 }
 
 int file_exists_check(char name[MAX_SIZE_ARGS]){
-	int file_exists;
+	int file_exists = 0;
 
 	FILE *check_file;
-	check_file = fopen(name, "r");
+	check_file = fopen(name, "r+");
 	
 	if(check_file != NULL){
 		file_exists = 1;
@@ -98,7 +96,8 @@ int file_exists_check(char name[MAX_SIZE_ARGS]){
 		file_exists = 0;
 	}
 	
-	fclose(check_file);
+	//fclose currently skipped - it seems to crash the process just after the fopen() command for an unknown reason
+	//fclose(check_file);
 	
 	return file_exists;
 }
@@ -106,7 +105,7 @@ int file_exists_check(char name[MAX_SIZE_ARGS]){
 int number_format_check(char number[MAX_SIZE_ARGS]){
 	int num_max_index;
 	int temp_val;
-	int num_out;
+	int num_out = 0;
 	
 	for (int i = 0; i < MAX_SIZE_ARGS; i++){
 		if(number[i] != '\0'){
@@ -118,14 +117,14 @@ int number_format_check(char number[MAX_SIZE_ARGS]){
 	}
 	
 	for (int i = 0; i <= num_max_index; i++){
-		temp_val = number[i] - 0x30
+		temp_val = number[i] - 0x30;
 		
 		if((temp_val >= 0) && (temp_val <= 9)){
 			temp_val *= pow(10.0, (double) num_max_index - i);
 			num_out += temp_val;
 		}
 		else{
-			printf("\nUnable to proceed. Please ensure the number of iterations (argument 2) is a positive integer value.")
+			printf("\nUnable to proceed. Please ensure the number of iterations (argument 2) is a positive integer value.");
 			return -1;
 		}
 	}

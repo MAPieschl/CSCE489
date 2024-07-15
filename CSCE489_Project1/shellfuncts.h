@@ -22,8 +22,11 @@
  *************************************************************************************/
 
 void select_command(int cmd_num, char cmd[MAX_NUM_ARGS][MAX_SIZE_ARGS]);
+int file_name_check(char name[MAX_SIZE_ARGS]);
+int file_exists_check(char name[MAX_SIZE_ARGS]);
+int number_format_check(char number[MAX_SIZE_ARGS]);
 void create(char name[MAX_SIZE_ARGS]);
-void update(char name[MAX_SIZE_ARGS], char number[MAX_SIZE_ARGS], char text[MAX_SIZE_ARGS]);
+void update(char name[MAX_SIZE_ARGS], int number, char text[MAX_SIZE_ARGS]);
 void list(char name[MAX_SIZE_ARGS]);
 void dir();
 void halt();
