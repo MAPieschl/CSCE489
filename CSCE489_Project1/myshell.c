@@ -1,5 +1,5 @@
 /*************************************************************************************
- * myshell - student code for Project 1 of CSCE 489 
+ * myshell - Student code for Project 1 of CSCE 489 
  * BY:		Capt Mike Pieschl
  * DATE: 	19 July 2024
  *
@@ -25,11 +25,24 @@ const char AVAILABLE_CMDS[5][7] = {"create", "update", "list", "dir", "halt"};
 // Computed number of commands available
 const size_t NUM_CMDS = sizeof(AVAILABLE_CMDS);
 
+// Tracks number of children if background processes are initiated
+int child_counter = 0;
+
 struct Command
 {
     char raw[INPUT_BUFFER_SIZE];
     char parsed[MAX_NUM_ARGS][MAX_SIZE_ARGS];
 };
+
+/*************************************************************************************
+ * parse_command - parses command and applies error checking to arguments
+ *
+ *		Params:	raw_cmd - full string output from user input (stored in command struct)
+ 				parsed_cmd - parsed output (stored in command struct)
+ *
+ *		Returns: void
+ *
+ *************************************************************************************/
 
 void parse_cmd(char raw_cmd[INPUT_BUFFER_SIZE], char parsed_cmd[MAX_NUM_ARGS][MAX_SIZE_ARGS])
 {
@@ -81,12 +94,31 @@ void parse_cmd(char raw_cmd[INPUT_BUFFER_SIZE], char parsed_cmd[MAX_NUM_ARGS][MA
     return;
 }
 
+/*************************************************************************************
+ * run_command - handles user input, process forking, child exit conditions, and calls 
+ *				 command functions
+ *
+ *		Params:	(none)
+ *
+ *		Returns: void
+ *
+ *************************************************************************************/
+
+
 void run_cmd()
 {
     struct Command current_cmd = {0};
     char old_chars;
     pid_t pid_child;
-    int child_status = 0;
+    int child_status;
+    
+    // Catch children and update child counter following background process execution
+    for(int i = child_counter; i > 0; i--){
+    	waitpid(-1, &child_status, WNOHANG);
+    	if(WIFEXITED(child_status)){
+    		child_counter--;
+    	}
+    }
 
     // Request & read command
     printf("\n>> ");
@@ -103,26 +135,39 @@ void run_cmd()
     // Parse command
     parse_cmd(current_cmd.raw, current_cmd.parsed);
     
+    // Fork and increment child counter
     pid_child = fork();
+    child_counter++;
     
+    // Parent conditional
     if(pid_child != 0){
+    
+    	// Search for background process signifier
 	for(int i = 0; i < MAX_NUM_ARGS; i++){
+	
 		if(strcmp(current_cmd.parsed[i], "&") == 0){
-			printf("\n[] %d\n", pid_child);
+		
+			// Standard linux printout for background process
+			printf("\n[%d] %d\n", child_counter, pid_child);
 			return;
 		}
 	}
 	
 	// The wait() flow below was derived from:
 	// https://www.geeksforgeeks.org/wait-system-call-c/ and modified using info
-	// from `man wait` to specify child pid
+	// from `man wait` to specify child pid for background process execution
     	waitpid(pid_child, &child_status, 0);
     	
     	if(WIFEXITED(child_status)){
+    		
+    		child_counter--;
     	
+    		// Successful child execution (exit(0))
     		if(child_status == 0){
     			printf("\n'%s' completed successfully by PID %d!\n", current_cmd.parsed[0], pid_child);
     		}
+    		
+    		// Unsuccessful child execution (exit(!0))
     		else{
     			printf("\n'%s' failed by PID %d :(\n", current_cmd.parsed[0], pid_child);
     		}
@@ -131,13 +176,20 @@ void run_cmd()
     	return;
     }
 
+	// Execute command
     for (int cmd_index = 0; cmd_index < (int)NUM_CMDS; cmd_index++)
     {
+    	// Catch good commands
         if (strcmp(AVAILABLE_CMDS[cmd_index], current_cmd.parsed[0]) == 0)
         {
+        	// Find command
             select_command(cmd_index, current_cmd.parsed);
+            
+            // Catch errored execution (exit(0) is in each individual command function)
             exit(1);
         }
+        
+        // Catch bad commands
         else if (cmd_index >= (int)NUM_CMDS - 1)
         {
             printf("\nCommand not found...\n");
@@ -148,10 +200,12 @@ void run_cmd()
 
 int main()
 {
+	// Store parent PID
     pid_t pid_shell = getpid();
     
     printf("Welcome to myShell! Your current process ID is %d", pid_shell);
     
+    // Runtime loop
     for (int i = 0; i < 10; i++)
     {
         run_cmd();
