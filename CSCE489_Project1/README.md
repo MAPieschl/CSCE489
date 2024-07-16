@@ -89,3 +89,7 @@ Add your command function to match the definition in `shellfuncts.h`.
 Add the command name to AVAILABLE_CMDS:
 
     const char AVAILABLE_CMDS[5][7] = {"create", "update", "list", "dir", "halt"};
+    
+If the command should not be allowed to run in the background (such as a command that lists values to the shell), background processing can be inhibited by adding the command name to NO_BG_PROCESS:
+
+	const char NO_BG_PROCESS[3][7] = {"list", "dir", "halt"};

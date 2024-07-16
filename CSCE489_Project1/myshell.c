@@ -27,7 +27,6 @@ const size_t NUM_CMDS = sizeof(AVAILABLE_CMDS);
 
 const char NO_BG_PROCESS[3][7] = {"list", "dir", "halt"};
 
-
 // Tracks number of children if background processes are initiated
 int child_counter = 0;
 
@@ -145,11 +144,12 @@ void run_cmd()
     // Parent conditional
     if(pid_child != 0){
     
-    	// Search for background process signifier
+    // Search for background process signifier
 	for(int i = 0; i < MAX_NUM_ARGS; i++){
 	
 		if(strcmp(current_cmd.parsed[i], "&") == 0){
 		
+			// Set flag command is on the "no background process" list
 			int background_flag = 0;
 			for(int i = 0; i < (int) sizeof(NO_BG_PROCESS); i++){
 				if(strcmp(current_cmd.parsed[0], NO_BG_PROCESS[i]) == 0){
@@ -158,6 +158,7 @@ void run_cmd()
 				}
 			}
 			
+			// If background process is allowed, print # of active children and pid
 			if(background_flag == 0){
 				// Standard linux printout for background process
 				printf("\n[%d] %d\n", child_counter, pid_child);
