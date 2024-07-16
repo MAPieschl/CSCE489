@@ -25,6 +25,9 @@ const char AVAILABLE_CMDS[5][7] = {"create", "update", "list", "dir", "halt"};
 // Computed number of commands available
 const size_t NUM_CMDS = sizeof(AVAILABLE_CMDS);
 
+const char NO_BG_PROCESS[3][7] = {"list", "dir", "halt"};
+
+
 // Tracks number of children if background processes are initiated
 int child_counter = 0;
 
@@ -147,9 +150,19 @@ void run_cmd()
 	
 		if(strcmp(current_cmd.parsed[i], "&") == 0){
 		
-			// Standard linux printout for background process
-			printf("\n[%d] %d\n", child_counter, pid_child);
-			return;
+			int background_flag = 0;
+			for(int i = 0; i < (int) sizeof(NO_BG_PROCESS); i++){
+				if(strcmp(current_cmd.parsed[0], NO_BG_PROCESS[i]) == 0){
+					printf("WARNING:  %s ignores '&' arguments.\n", current_cmd.parsed[0]);
+					background_flag = 1;
+				}
+			}
+			
+			if(background_flag == 0){
+				// Standard linux printout for background process
+				printf("\n[%d] %d\n", child_counter, pid_child);
+				return;
+			}
 		}
 	}
 	
@@ -176,7 +189,7 @@ void run_cmd()
     	return;
     }
 
-	// Execute command
+	// Child process - execute command
     for (int cmd_index = 0; cmd_index < (int)NUM_CMDS; cmd_index++)
     {
     	// Catch good commands
@@ -193,7 +206,8 @@ void run_cmd()
         else if (cmd_index >= (int)NUM_CMDS - 1)
         {
             printf("\nCommand not found...\n");
-            return;
+            
+            exit(1);
         }
     }
 }
