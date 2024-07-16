@@ -7,8 +7,11 @@
 #### Table of Contents
 
 **1. Installation**
+
 **2. Usage**
+
 **3. Development**
+
 
 ---
 
@@ -68,7 +71,7 @@ PURPOSE:  closes myshell and terminates all associated processes
 
 **3. Development**
 
-If you wish to further expand the the commands available in myshell, the following code must be updated:
+If you wish to further expand the commands available in myshell, the following code must be updated:
 
 **shellfuncts.h**
 
