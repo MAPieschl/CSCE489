@@ -77,7 +77,7 @@ void select_command(int cmd_num, char cmd[MAX_NUM_ARGS][MAX_SIZE_ARGS]){
  *			The function does not check for file name length; it is only
  *			limited by MAX_SIZE_ARGS (defualt - 64 characters)
  *
- *		Params:	name[] - file name
+ *		Params:	name[] - file name of size MAX_SIZE_ARGS
  *
  *		Returns: int - 	0 -> file name is acceptable
  				1 -> file name is unacceptable
@@ -100,10 +100,10 @@ int file_name_check(char name[MAX_SIZE_ARGS]){
 /*************************************************************************************
  * file_exists_check - 	checks to see if file exists
  *
- *		Params:	name[] - file name
+ *		Params:	name[] - file name of size MAX_SIZE_ARGS
  *
  *		Returns: int - 	0 -> file does not exist
- 				1 -> file exists
+ *						1 -> file exists
  *
  *************************************************************************************/
 
@@ -111,17 +111,15 @@ int file_exists_check(char name[MAX_SIZE_ARGS]){
 	int file_exists = 0;
 
 	FILE *check_file;
-	check_file = fopen(name, "r+");
+	check_file = fopen(name, "r");
 	
 	if(check_file != NULL){
 		file_exists = 1;
+		fclose(check_file);
 	}
 	else{
 		file_exists = 0;
 	}
-	
-	//fclose currently skipped - it seems to crash the process just after the fopen() command for an unknown reason
-	//fclose(check_file);
 	
 	return file_exists;
 }
@@ -174,9 +172,9 @@ int number_format_check(char number[MAX_SIZE_ARGS]){
 /*************************************************************************************
  * create -	creates a file in teh current directory using the file name provided
  *
- *		Params:	name[] - file name
+ *		Params:	name[] - file name of size MAX_SIZE_ARGS
  *
- *		Returns: void (exits process with return code 0)
+ *		Returns: void (exits process with code 0)
  *
  *************************************************************************************/
  
@@ -200,7 +198,7 @@ void create(char name[MAX_SIZE_ARGS]){
  *			number - number of times argument 3 shall be appended to the file
  			text[] - word or phrase to be appended to the file
  *
- *		Returns: void (exits process with return code 0)
+ *		Returns: void (exits process with code 0)
  *
  *************************************************************************************/
 
@@ -225,9 +223,9 @@ void update(char name[MAX_SIZE_ARGS], int number, char text[MAX_SIZE_ARGS]){
 	
 	for (int i = 0; i < number; i++){
 		fprintf(mod_file, "%s\n", temp_string);
+		fflush(mod_file);
+		sleep(strlen(temp_string)/5);
 	}
-	
-	sleep(strlen(temp_string)/5);
 	
 	fclose(mod_file);
 	
@@ -235,26 +233,27 @@ void update(char name[MAX_SIZE_ARGS], int number, char text[MAX_SIZE_ARGS]){
 }
 
 /*************************************************************************************
- * hello - sends hello world to the user! I'm doing proper function commenting so future
- *         coders might not find my code as painful.
+ * list - print a file to the shell
  *
- *    Params:  param2 - not a very good parameter name - something better might be
- *                      say, msgstr or sendtext
+ *    Params:  name[] - file name of size MAX_SIZE_ARGS
+ *
+ *	  Returns: void (exits process with code 0)
  *
  *************************************************************************************/
 
 void list(char name[MAX_SIZE_ARGS]){
-	// Run cat commadn to list file
+	// Run cat command to list file
 	printf("\n\n");
 	execl("/bin/cat", "cat %s", name, NULL);
+	exit(0);
 }
 
 /*************************************************************************************
- * hello - sends hello world to the user! I'm doing proper function commenting so future
- *         coders might not find my code as painful.
+ * dir - lists contents of a directory in the shell
  *
- *    Params:  param2 - not a very good parameter name - something better might be
- *                      say, msgstr or sendtext
+ *    Params:  name[] - file name of size MAX_SIZE_ARGS
+ *
+ *	  Returns: void (exits process with code 0)
  *
  *************************************************************************************/
 
@@ -264,11 +263,11 @@ void dir(){
 }
 
 /*************************************************************************************
- * hello - sends hello world to the user! I'm doing proper function commenting so future
- *         coders might not find my code as painful.
+ * halt - close shell and all associated processes
  *
- *    Params:  param2 - not a very good parameter name - something better might be
- *                      say, msgstr or sendtext
+ *    Params:  None
+ *
+ *	  Returns: void (exits process with code 0)
  *
  *************************************************************************************/
 
