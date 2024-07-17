@@ -163,7 +163,7 @@ void run_cmd()
     // Check if new command requires file lockout
     for(int i = 0; i < (int) sizeof(FILE_MOD_CMDS); i++){
     
-		if(strcmp(current_cmd.parsed[0], FILE_MOD_CMDS[i]) == 0){
+		if(strcmp(current_cmd.parsed[0], FILE_MOD_CMDS[i]) == 0 && strcmp(current_cmd.parsed[0], "") != 0){
 			
 			// Catch and return if file is already locked by another process
 			for(int i = 0; i < MAX_ACTIVE_FILES; i++){
