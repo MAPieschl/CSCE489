@@ -46,7 +46,7 @@ void select_command(int cmd_num, char cmd[MAX_NUM_ARGS][MAX_SIZE_ARGS]){
 			error_check = number_format_check(cmd[2]);
 			if(error_check < 0){exit(1);}
 			
-			return_key = number_format_check(cmd[MAX_NUM_ARGS - 1])
+			return_key = number_format_check(cmd[MAX_NUM_ARGS - 1]);
 			if(return_key < 0){exit(1);}
 			
 			update(cmd[1], error_check, cmd[3], return_key);
@@ -58,10 +58,10 @@ void select_command(int cmd_num, char cmd[MAX_NUM_ARGS][MAX_SIZE_ARGS]){
 				exit(1);
 			}
 			
-			return_key = number_format_check(cmd[MAX_NUM_ARGS - 1])
+			return_key = number_format_check(cmd[MAX_NUM_ARGS - 1]);
 			if(return_key < 0){exit(1);}
 		
-			list(cmd[1], return_key);
+			list(cmd[1]);
 			break;
 		case DIR:
 			dir();
@@ -248,11 +248,11 @@ void update(char name[MAX_SIZE_ARGS], int number, char text[MAX_SIZE_ARGS], int 
  *
  *************************************************************************************/
 
-void list(char name[MAX_SIZE_ARGS], int key){
+void list(char name[MAX_SIZE_ARGS]){
 	// Run cat command to list file
 	printf("\n\n");
 	execl("/bin/cat", "cat %s", name, NULL);
-	exit(key);
+	exit(1);
 }
 
 /*************************************************************************************
@@ -266,7 +266,7 @@ void list(char name[MAX_SIZE_ARGS], int key){
 
 void dir(){
 	execl("/bin/ls", "ls", NULL);
-	exit(0);
+	exit(1);
 }
 
 /*************************************************************************************
@@ -281,5 +281,5 @@ void dir(){
 void halt(){
 	pid_t parent_pid = getppid();
 	kill(parent_pid, SIGKILL);
-	exit(0);
+	exit(1);
 }

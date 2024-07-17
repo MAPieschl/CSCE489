@@ -37,10 +37,10 @@ int child_counter = 0;
 // Tracks files actively being processed (and therefore locked for used)
 //	- Stores up to five files (overflow will cause the tracked file to become untracked
 //  - Use of this protection feature requires that the file name be arguement 1 (after command)
-char active_files[5][7];
+char active_files[MAX_ACTIVE_FILES][MAX_SIZE_ARGS];
 
 // Tracks next empty position in active_files
-char active_files_indexer = 0;
+int active_files_indexer = 0;
 
 struct Command
 {
@@ -121,26 +121,33 @@ void parse_cmd(char raw_cmd[INPUT_BUFFER_SIZE], char parsed_cmd[MAX_NUM_ARGS][MA
 
 void run_cmd()
 {
+
     struct Command current_cmd = {0};
     char old_chars;
     pid_t pid_child;
     int child_status;
     
+    // Request & read command
+    printf("\n>> ");
+    scanf("%[^\n]", current_cmd.raw);
+    
     // Catch children and update child counter following background process execution
     for(int i = child_counter; i > 0; i--){
     	waitpid(-1, &child_status, WNOHANG);
     	if(WIFEXITED(child_status)){
-    		child_counter--;
-    		printf("\nchild_status = %d", child_status);
-    		if(child_status >= (int) sizeof(active_files)){
-    			active_files[child_status - (int) sizeof(active_files)] = { '\0' };
+    		if(child_status >= 256*MAX_ACTIVE_FILES){
+    			strcpy(active_files[child_status/256 - MAX_ACTIVE_FILES], "");
+    			child_counter--;
     		}
     	}
     }
-
-    // Request & read command
-    printf("\n>> ");
-    scanf("%[^\n]", current_cmd.raw);
+    
+    // Clean up any remaining active files if all children are complete
+    if(child_counter < 1){
+		for(int i = 0; i < MAX_ACTIVE_FILES; i++){
+			strcpy(active_files[i], "");
+		}
+	}
     
     // The following code snippet is commonly reused for clearing the input buffer. Sites utilized for finding and understanding the snippet are:
     //  https://www.geeksforgeeks.org/clearing-the-input-buffer-in-cc/
@@ -153,27 +160,29 @@ void run_cmd()
     // Parse command
     parse_cmd(current_cmd.raw, current_cmd.parsed);
     
+    // Check if new command requires file lockout
     for(int i = 0; i < (int) sizeof(FILE_MOD_CMDS); i++){
+    
 		if(strcmp(current_cmd.parsed[0], FILE_MOD_CMDS[i]) == 0){
-		
-			for(int i = 0; i < (int) sizeof(active_files); i++){
+			
+			// Catch and return if file is already locked by another process
+			for(int i = 0; i < MAX_ACTIVE_FILES; i++){
 				if(strcmp(current_cmd.parsed[1], active_files[i]) == 0){
-					printf("%s is currently in use. Please wait and try again later.")
+					printf("\n%s is currently in use. Please wait and try again later.\n", current_cmd.parsed[1]);
 					return;
 				}
 			}
-			printf("\nStoring %s in active_files", current_cmd.parsed[1]);
+			
 			// Store file name in active_files
-			active_files[active_files_indexer] = current_cmd.parsed[1];
+			strcpy(active_files[active_files_indexer], current_cmd.parsed[1]);
 			
 			// Store encoded active_files index in last argument of current_cmd.parsed
 			// - This value is the key to unlock the file on process exit
-			sprintf(current_cmd.parsed[sizeof(current_cmd.parsed)], "%d", active_files_indexer + sizeof(active_files);
-			printf("\n%s index sent to cmd", current_cmd.parsed[4]);
+			sprintf(current_cmd.parsed[MAX_NUM_ARGS - 1], "%d", active_files_indexer + MAX_ACTIVE_FILES);
+			
 			// Increment indexer no larger than array length
-			active_files_indexer = sizeof(active_files) % (active_files_indexer + 1);
+			active_files_indexer = MAX_ACTIVE_FILES % (active_files_indexer + 1);
 			active_files_indexer++;
-			printf("\n%d is the new indexer value", active_files_indexer);
     	}
     }
     
@@ -184,40 +193,46 @@ void run_cmd()
     // Parent conditional
     if(pid_child != 0){
     
-    // Search for background process signifier
-	for(int i = 0; i < MAX_NUM_ARGS; i++){
-	
-		if(strcmp(current_cmd.parsed[i], "&") == 0){
+		// Search for background process signifier
+		for(int i = 0; i < MAX_NUM_ARGS; i++){
 		
-			// Set flag command is on the "no background process" list
-			int background_flag = 0;
-			for(int i = 0; i < (int) sizeof(NO_BG_PROCESS); i++){
-				if(strcmp(current_cmd.parsed[0], NO_BG_PROCESS[i]) == 0){
-					printf("WARNING:  %s ignores '&' arguments.\n", current_cmd.parsed[0]);
-					background_flag = 1;
+			if(strcmp(current_cmd.parsed[i], "&") == 0){
+			
+				// Set flag command is on the "no background process" list
+				int background_flag = 0;
+				for(int i = 0; i < (int) sizeof(NO_BG_PROCESS); i++){
+					if(strcmp(current_cmd.parsed[0], NO_BG_PROCESS[i]) == 0){
+						printf("WARNING:  %s ignores '&' arguments.\n", current_cmd.parsed[0]);
+						background_flag = 1;
+					}
+				}
+				
+				// If background process is allowed, print # of active children and pid
+				if(background_flag == 0){
+					// Standard linux printout for background process
+					printf("\n[%d] %d\n", child_counter, pid_child);
+					return;
 				}
 			}
-			
-			// If background process is allowed, print # of active children and pid
-			if(background_flag == 0){
-				// Standard linux printout for background process
-				printf("\n[%d] %d\n", child_counter, pid_child);
-				return;
-			}
 		}
-	}
-	
-	// The wait() flow below was derived from:
-	// https://www.geeksforgeeks.org/wait-system-call-c/ and modified using info
-	// from `man wait` to specify child pid for background process execution
+		
+		// The wait() flow below was derived from:
+		// https://www.geeksforgeeks.org/wait-system-call-c/ and modified using info
+		// from `man wait` to specify child pid for background process execution
+
     	waitpid(pid_child, &child_status, 0);
     	
     	if(WIFEXITED(child_status)){
-    		
     		child_counter--;
     	
     		// Successful child execution (exit(0))
     		if(child_status == 0){
+    			printf("\n'%s' completed successfully by PID %d!\n", current_cmd.parsed[0], pid_child);
+    		}
+    		
+    		// Successful with file unlock
+    		else if(child_status >= 256*MAX_ACTIVE_FILES){
+    			strcpy(active_files[child_status/256 - MAX_ACTIVE_FILES], "");
     			printf("\n'%s' completed successfully by PID %d!\n", current_cmd.parsed[0], pid_child);
     		}
     		
@@ -261,7 +276,7 @@ int main()
     printf("Welcome to myShell! Your current process ID is %d", pid_shell);
     
     // Runtime loop
-    for (int i = 0; i < 10; i++)
+    while(1)
     {
         run_cmd();
     }

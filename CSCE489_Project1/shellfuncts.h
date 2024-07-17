@@ -14,10 +14,13 @@
 #define INPUT_BUFFER_SIZE 256
 
 // Maximum number of arguments per command (including the command)
-#define MAX_NUM_ARGS 5
+#define MAX_NUM_ARGS 6
 
 // Maximum size of each argument (in characters)
 #define MAX_SIZE_ARGS 64
+
+// Maximum numbers of active files tracked
+#define MAX_ACTIVE_FILES 5
 
 // Used for convenience to index AVAILABLE_CMDS in shellfuncts.c
 //	- Any new commands must be added to:
@@ -37,7 +40,7 @@ int file_exists_check(char name[MAX_SIZE_ARGS]);
 int number_format_check(char number[MAX_SIZE_ARGS]);
 void create(char name[MAX_SIZE_ARGS]);
 void update(char name[MAX_SIZE_ARGS], int number, char text[MAX_SIZE_ARGS], int key);
-void list(char name[MAX_SIZE_ARGS], int key;
+void list(char name[MAX_SIZE_ARGS]);
 void dir();
 void halt();
 
