@@ -23,6 +23,7 @@
 
 void select_command(int cmd_num, char cmd[MAX_NUM_ARGS][MAX_SIZE_ARGS]){
 	int error_check = 0;
+	int return_key = 0;
 	switch(cmd_num){
 		case CREATE:
 			error_check = file_name_check(cmd[1]);
@@ -45,7 +46,10 @@ void select_command(int cmd_num, char cmd[MAX_NUM_ARGS][MAX_SIZE_ARGS]){
 			error_check = number_format_check(cmd[2]);
 			if(error_check < 0){exit(1);}
 			
-			update(cmd[1], error_check, cmd[3]);
+			return_key = number_format_check(cmd[MAX_NUM_ARGS - 1])
+			if(return_key < 0){exit(1);}
+			
+			update(cmd[1], error_check, cmd[3], return_key);
 			break;
 		case LIST:
 			error_check = file_exists_check(cmd[1]);
@@ -53,8 +57,11 @@ void select_command(int cmd_num, char cmd[MAX_NUM_ARGS][MAX_SIZE_ARGS]){
 				printf("\nFile does not exist. Please use - create <file name> - to create a file prior to attempting to write to the file.");
 				exit(1);
 			}
+			
+			return_key = number_format_check(cmd[MAX_NUM_ARGS - 1])
+			if(return_key < 0){exit(1);}
 		
-			list(cmd[1]);
+			list(cmd[1], return_key);
 			break;
 		case DIR:
 			dir();
@@ -202,7 +209,7 @@ void create(char name[MAX_SIZE_ARGS]){
  *
  *************************************************************************************/
 
-void update(char name[MAX_SIZE_ARGS], int number, char text[MAX_SIZE_ARGS]){
+void update(char name[MAX_SIZE_ARGS], int number, char text[MAX_SIZE_ARGS], int key){
 
 	char temp_string[MAX_SIZE_ARGS];
 	int temp_string_index = 0;
@@ -229,7 +236,7 @@ void update(char name[MAX_SIZE_ARGS], int number, char text[MAX_SIZE_ARGS]){
 	
 	fclose(mod_file);
 	
-	exit(0);
+	exit(key);
 }
 
 /*************************************************************************************
@@ -241,11 +248,11 @@ void update(char name[MAX_SIZE_ARGS], int number, char text[MAX_SIZE_ARGS]){
  *
  *************************************************************************************/
 
-void list(char name[MAX_SIZE_ARGS]){
+void list(char name[MAX_SIZE_ARGS], int key){
 	// Run cat command to list file
 	printf("\n\n");
 	execl("/bin/cat", "cat %s", name, NULL);
-	exit(0);
+	exit(key);
 }
 
 /*************************************************************************************

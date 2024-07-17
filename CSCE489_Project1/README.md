@@ -96,3 +96,7 @@ Add the command name to AVAILABLE_CMDS:
 If the command should not be allowed to run in the background (such as a command that lists values to the shell), background processing can be inhibited by adding the command name to NO_BG_PROCESS:
 
 	const char NO_BG_PROCESS[3][7] = {"list", "dir", "halt"};
+	
+If the command opens an existing file, it must be added to FILE_MOD_CMDS to inhibit two commands from opening the same file.
+
+	const char FILE_MOD_CMDS[2][7] = {"update", "list"};

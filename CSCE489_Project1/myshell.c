@@ -25,10 +25,22 @@ const char AVAILABLE_CMDS[5][7] = {"create", "update", "list", "dir", "halt"};
 // Computed number of commands available
 const size_t NUM_CMDS = sizeof(AVAILABLE_CMDS);
 
+// Commands not available for background processing
 const char NO_BG_PROCESS[3][7] = {"list", "dir", "halt"};
+
+// Commands that view or modify existing files (used to protect files)
+const char FILE_MOD_CMDS[2][7] = {"update", "list"};
 
 // Tracks number of children if background processes are initiated
 int child_counter = 0;
+
+// Tracks files actively being processed (and therefore locked for used)
+//	- Stores up to five files (overflow will cause the tracked file to become untracked
+//  - Use of this protection feature requires that the file name be arguement 1 (after command)
+char active_files[5][7];
+
+// Tracks next empty position in active_files
+char active_files_indexer = 0;
 
 struct Command
 {
@@ -119,6 +131,10 @@ void run_cmd()
     	waitpid(-1, &child_status, WNOHANG);
     	if(WIFEXITED(child_status)){
     		child_counter--;
+    		printf("\nchild_status = %d", child_status);
+    		if(child_status >= (int) sizeof(active_files)){
+    			active_files[child_status - (int) sizeof(active_files)] = { '\0' };
+    		}
     	}
     }
 
@@ -136,6 +152,30 @@ void run_cmd()
 
     // Parse command
     parse_cmd(current_cmd.raw, current_cmd.parsed);
+    
+    for(int i = 0; i < (int) sizeof(FILE_MOD_CMDS); i++){
+		if(strcmp(current_cmd.parsed[0], FILE_MOD_CMDS[i]) == 0){
+		
+			for(int i = 0; i < (int) sizeof(active_files); i++){
+				if(strcmp(current_cmd.parsed[1], active_files[i]) == 0){
+					printf("%s is currently in use. Please wait and try again later.")
+					return;
+				}
+			}
+			printf("\nStoring %s in active_files", current_cmd.parsed[1]);
+			// Store file name in active_files
+			active_files[active_files_indexer] = current_cmd.parsed[1];
+			
+			// Store encoded active_files index in last argument of current_cmd.parsed
+			// - This value is the key to unlock the file on process exit
+			sprintf(current_cmd.parsed[sizeof(current_cmd.parsed)], "%d", active_files_indexer + sizeof(active_files);
+			printf("\n%s index sent to cmd", current_cmd.parsed[4]);
+			// Increment indexer no larger than array length
+			active_files_indexer = sizeof(active_files) % (active_files_indexer + 1);
+			active_files_indexer++;
+			printf("\n%d is the new indexer value", active_files_indexer);
+    	}
+    }
     
     // Fork and increment child counter
     pid_child = fork();
