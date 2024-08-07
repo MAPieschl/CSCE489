@@ -1,15 +1,23 @@
+#include <pthread.h>
+
 #ifndef SEMAPHORE_H
 #define SEMAPHORE_H
 
-class Semaphore 
+class Semaphore
 {
 public:
+    // Instance variables
+    int value;
+    int clear_semaphore;
+    pthread_mutex_t queue_mutex;
 
-	Semaphore(int count);
-	~Semaphore();
+    // Constructor & destructor methods
+    Semaphore(int count);
+    ~Semaphore();
 
-	void wait();
-	void signal();
+    // Semaphore calls
+    void wait();
+    void signal();
 
 private:
 

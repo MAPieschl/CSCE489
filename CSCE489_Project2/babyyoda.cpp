@@ -9,17 +9,45 @@
 #include <time.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <string.h>
 #include "Semaphore.h"
+#include <iostream>
 
-// Semaphores that each thread will have access to as they are global in shared memory
+// "empty" semaphore - initializes with value = 0
+// -> value represents number of dolls on the shelf
+// -> wait() holds customers in the queue
 Semaphore *empty = NULL;
+
+// "full" semaphore - intiliazes to user-generated buffer_size
+// -> value represents the number of empty spots on the shelf
+// -> wait() holds producer if shelf is full
 Semaphore *full = NULL;
 
-pthread_mutex_t buf_mutex;
+// pointer to the starting address of the bounded buffer representing the "shelf" (static after initialization)
+int *start_of_shelf;
 
-int buffer = 0;
+// pointer to the address of the next empty position in the bounded buffer representing the "shelf" (*start_of_shelf + buffer_size) 
+int *next_empty;
+
+// pointer to the last address of the bounded buffer representing the "shelf" (static after initialization)
+int *end_of_shelf;
+
+// locks the shelf while items are being added or removed
+pthread_mutex_t shelf_mutex;
+int shelf_lock;
+
+// counters for number of dolls consumed and produced
 int consumed = 0;
+int produced = 0;
 
+// pointer to the address of the first customer (static after initialization)
+pthread_t *first_customer;
+
+// pointer to the address of the next customer to buy a doll
+pthread_t *next_customer;
+
+// pointer to the address of the last customer in line
+pthread_t *last_customer;
 
 /*************************************************************************************
  * producer_routine - this function is called when the producer thread is created.
@@ -31,48 +59,56 @@ int consumed = 0;
  *
  *************************************************************************************/
 
-void *producer_routine(void *data) {
+void *producer_routine(void *data){
 
-	time_t rand_seed;
-	srand((unsigned int) time(&rand_seed));
+    // Local (easier to read) pointer to max_items
+    int *max_items = (int *)data;
 
-	// The current serial number (incremented)
-	unsigned int serialnum = 1;
-	
-	// We know the data pointer is an integer that indicates the number to produce
-	int left_to_produce = *((int *) data);
+    // ------------------- UI OUTPUT ------------------------
 
-	// Loop through the amount we're going to produce and place into the buffer
-	while (left_to_produce > 0) {
-		printf("Producer wants to put Yoda #%d into buffer...\n", serialnum);
+    printf("\nBaby Yoda Inc is open for business! Bob (Employee ID: %lu) plans to produce %d dolls today.\n\n", (uintptr_t)pthread_self(), *max_items);
 
-		// Semaphore check to make sure there is an available slot
-		full->wait();
+    // -------------- PRODUCTION SEQUENCE -------------------
 
-		// Place item on the next shelf slot by first setting the mutex to protect our buffer vars
-		pthread_mutex_lock(&buf_mutex);
+    do {
 
-		buffer = serialnum;
-		serialnum++;
-		left_to_produce--;
+        // Check to see if the shelf is full, wait if so
+        full->wait();
 
-		pthread_mutex_unlock(&buf_mutex);
-		
-		printf("   Yoda put on shelf.\n");
-		
-		// Semaphore signal that there are items available
-		empty->signal();
+        shelf_lock = pthread_mutex_lock(&shelf_mutex);
 
-		// random sleep but he makes them fast so 1/20 of a second
-		usleep((useconds_t) (rand() % 200000));
-	
-	}
-	return NULL;
+        // Add another to the shelf
+        empty->signal();
+        produced++;
+        *next_empty = produced;
+        next_empty++;
+
+        shelf_lock = pthread_mutex_unlock(&shelf_mutex);
+        
+        // ------------------- UI OUTPUT ------------------------
+        
+        printf("\nAnother doll is ready for purchase! %d doll(s) has/have been produced today with %d left on the shelf.\n", produced, empty->value);
+
+        std::cout << "\nCurrent shelf: ";
+        for(int i = 0; i < (next_empty - start_of_shelf); i++){
+            std::cout << start_of_shelf[i] << " ";
+        }
+        std::cout << "\n";
+
+        // ------------------ TESTING USE ------------------------
+
+        // Random sleep to vary customer arrival (1 - 10 seconds)
+        usleep((useconds_t)(rand() % 500000));
+    } while (produced < *max_items);
+
+    empty->~Semaphore();
+    full->~Semaphore();
+
+    return NULL;
 }
 
-
 /*************************************************************************************
- * consumer_routine - this function is called when the consumer thread is created.
+ * customer_routine - this function is called when the customer thread is created.
  *
  *       Params: data - a void pointer that should point to a boolean that indicates
  *                      the thread should exit. Doesn't work so don't worry about it
@@ -81,94 +117,183 @@ void *producer_routine(void *data) {
  *
  *************************************************************************************/
 
-void *consumer_routine(void *data) {
-	(void) data;
+void *customer_routine(void *data){
 
-	bool quitthreads = false;
+    // ------------------- UI OUTPUT ------------------------
 
-	while (!quitthreads) {
-		printf("Consumer wants to buy a Yoda...\n");
+    printf("\nCustomer #%lu (Customer ID: %lu) has arrived!\n", (unsigned long)(last_customer - first_customer), (uintptr_t)pthread_self());
 
-		// Semaphore to see if there are any items to take
-		empty->wait();
+    printf("    There is/are %lu customer(s) currently in line.\n", (unsigned long)(last_customer - next_customer));
 
-		// Take an item off the shelf
-		pthread_mutex_lock(&buf_mutex);
-	
-		printf("   Consumer bought Yoda #%d.\n", buffer);
-		buffer = 0;
-		consumed++;
-	
-		pthread_mutex_unlock(&buf_mutex);
+    // --------------- PURCHASE SEQUENCE --------------------
 
-		// Consumers wait up to one second
-		usleep((useconds_t) (rand() % 1000000));
+    // Check to see if any dolls are on the shelf
+    empty->wait();
 
-		full->signal();
-	}
-	printf("Consumer goes home.\n");
+    // Buy the doll if available
+    full->signal();
 
-	return NULL;	
+    // ------------------- CLEANUP --------------------------
+    if(consumed < produced){
+
+        // Update shelf
+        shelf_lock = pthread_mutex_lock(&shelf_mutex);
+
+        // Increment total dolls consumed
+        consumed++;
+
+        // Increment customer queue pointer
+        next_customer++;
+
+        // UI output
+        printf("\nCustomer #%ld (Customer ID: %lu) has purchased doll #%d!\n", next_customer - first_customer, (uintptr_t)pthread_self(), *start_of_shelf);
+
+        std::cout << "\nCurrent shelf: ";
+        for(int i = 0; i < (next_empty - start_of_shelf); i++){
+            start_of_shelf[i] = start_of_shelf[i + 1];
+
+            if(i < (next_empty - start_of_shelf - 1)){
+                std::cout << start_of_shelf[i] << " ";
+            }
+        }
+        std::cout << "\n";
+
+        next_empty--;
+
+        shelf_lock = pthread_mutex_unlock(&shelf_mutex);
+    }
+    pthread_exit(data);
+
+    return NULL;
 }
 
-
 /*************************************************************************************
- * main - Standard C main function for our storefront. 
+ * main - Standard C main function for our storefront.
  *
- *		Expected params: pctest <num_consumers> <max_items>
+ *		Expected params: pctest <num_customers> <max_items>
  *				max_items - how many items will be produced before the shopkeeper closes
  *
  *************************************************************************************/
 
-int main(int argv, const char *argc[]) {
+int main(int argv, const char *argc[]){
 
-	// Get our argument parameters
-	if (argv < 2) {
-		printf("Invalid parameters. Format: %s <max_items>\n", argc[0]);
-		exit(0);
-	}
+    // ------------------------------------ INPUT HANDLING -------------------------------------------
 
-	// User input on the size of the buffer
-	int num_produce = (unsigned int) strtol(argc[1], NULL, 10);
+    // Get our argument parameters
+    if (argv < 4){
+        printf("Invalid parameters. Format: %s <buffer_size> <num_customers> <max_items>\n", argc[0]);
+        exit(0);
+    }
 
+    int buffer_size = (unsigned int)strtol(argc[1], NULL, 10);
+    int num_customers = (unsigned int)strtol(argc[2], NULL, 10);
+    int max_items = (unsigned int)strtol(argc[3], NULL, 10);
 
-	printf("Producing %d today.\n", num_produce);
-	
-	// Initialize our semaphores
-	empty = new Semaphore(0);
-	full = new Semaphore(1);
+    // Ensure valid values were provided. If not, warn users and end program.
+    try{
+        if (buffer_size < 0){
+            throw(1);
+        }
 
-	pthread_mutex_init(&buf_mutex, NULL); // Initialize our buffer mutex
+        if (num_customers < 0){
+            throw(2);
+        }
 
-	pthread_t producer;
-	pthread_t consumer;
+        if (max_items < 0){
+            throw(3);
+        }
 
-	// Launch our producer thread
-	pthread_create(&producer, NULL, producer_routine, (void *) &num_produce);
+        printf("\nWe are expecting %d customers and the shelf can hold %d dolls.\n", num_customers, buffer_size);
+    }
+    catch (int error_code){
+        switch (error_code){
+            case 1:
+                printf("Invalid parameters. Please ensure <buffer_size> is an integer value greater than or equal to 0.\n");
+                break;
+            case 2:
+                printf("Invalid parameters. Please ensure <num_customers> is an integer value greater than or equal to 0.\n");
+                break;
+            case 3:
+                printf("Invalid parameters. Please ensure <max_items> is an integer value greater than or equal to 0.\n");
+                break;
+            default:
+                printf("Invalid parameters. Format: %s <buffer_size> <num_customers> <max_items>\n", argc[0]);
+                break;
+        }
 
-	// Launch our consumer thread
-	pthread_create(&consumer, NULL, consumer_routine, NULL);
+        return 0;
+    }
 
-	// Wait for our producer thread to finish up
-	pthread_join(producer, NULL);
+    // ------------------------------------ LAUNCH THREADS ----------------------------------------------
 
-	printf("The manufacturer has completed his work for the day.\n");
+    // Initialize semaphores
+    empty = new Semaphore(0);
+    full = new Semaphore(buffer_size);
 
-	printf("Waiting for consumer to buy up the rest.\n");
+    // Hire Bob
+    pthread_t producer;
 
-	// Give the consumers a second to finish snatching up items
-	while (consumed < num_produce)
+    // Clean the shelf
+    start_of_shelf = (int *) malloc(buffer_size*sizeof(int));
+    next_empty = start_of_shelf;
+    end_of_shelf = start_of_shelf + buffer_size;
+    pthread_mutex_init(&shelf_mutex, NULL);
+
+    // Bob driving to the store
+    pthread_create(&producer, NULL, producer_routine, (void *)&max_items);
+
+    // Bob sweeps the sidewalk to better welcome customers
+    pthread_t *customer  = (pthread_t *)malloc(num_customers*sizeof(pthread_t));
+
+    // Designate the spot in front of the register as the first_customer and next_customer
+    first_customer = customer;
+    next_customer = customer;
+    last_customer = customer;
+
+    // Customers start showing up to the store and stand in line
+    // - the customers do not move in line (customer # = &customer - first_customer)
+    for (int current_customer = 0; current_customer < (int) num_customers; current_customer++){
+        
+        pthread_create(&customer[current_customer], NULL, customer_routine, 0);
+
+        // Update pointer to last customer in line
+        last_customer++;
+
+        // Random sleep to vary customer arrival (1 - 10 seconds)
+        usleep((useconds_t)(rand() % 1000000));
+    };
+
+    // Wait for Bob to finish making dolls
+    pthread_join(producer, NULL);
+
+    printf("\nThe manufacturer has completed his work for the day.\n\n");
+
+	// Give the customers a second to finish snatching up items
+	while (consumed < max_items){
 		sleep(1);
+	    printf("\nWaiting for customers to buy up the rest.\n\n");
+    }
 
 	// Now make sure they all exited
-//	for (unsigned int i=0; i<NUM_CONSUMERS; i++) {
-//		pthread_join(consumers[i], NULL);
-//	}
+    int cancel_code;
+	for (int i = 0; i < (int) num_customers; i++) {
+		cancel_code = pthread_join(customer[i], NULL);
+		if(cancel_code != 0){
+		    printf("Error: %d | Bob lost the receipt for customer #%d!", cancel_code, i + 1);
+		}
+		if(i >= consumed){
+		    printf("\nCustomer #%d has left without a Baby Yoda doll :(\n", i + 1);
+		}
+	}
 
 	// We are exiting, clean up
 	delete empty;
-	delete full;		
+	delete full;
+    free(start_of_shelf);
+    free(customer);
 
-	printf("Producer/Consumer simulation complete!\n");
+	printf("\nAll customers are gone!\n");
+	printf("\nProducer/customer simulation complete!\n");
 
+    return 0;
 }
