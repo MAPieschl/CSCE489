@@ -1,6 +1,5 @@
 /*************************************************************************************
- * babyyoda - used to test your semaphore implementation and can be a starting point for
- *			     your store front implementation
+ * babyyoda - completed CSCE489 - Project 2
  *
  *************************************************************************************/
 
@@ -49,11 +48,13 @@ pthread_t *next_customer;
 // pointer to the address of the last customer in line
 pthread_t *last_customer;
 
+// allows user to change rate of production compared to consumption
+int timing_slider = 10;
+
 /*************************************************************************************
  * producer_routine - this function is called when the producer thread is created.
  *
- *			Params: data - a void pointer that should point to an integer that indicates
- *							   the total number to be produced
+ *			Params: data - pointer to max_items
  *
  *			Returns: always NULL
  *
@@ -97,8 +98,8 @@ void *producer_routine(void *data){
 
         // ------------------ TESTING USE ------------------------
 
-        // Random sleep to vary customer arrival (1 - 10 seconds)
-        usleep((useconds_t)(rand() % 500000));
+        // Random sleep to vary customer arrival (1 - 5 seconds)
+        usleep((useconds_t)(rand() % timing_slider*50000));
     } while (produced < *max_items);
 
     empty->~Semaphore();
@@ -110,8 +111,7 @@ void *producer_routine(void *data){
 /*************************************************************************************
  * customer_routine - this function is called when the customer thread is created.
  *
- *       Params: data - a void pointer that should point to a boolean that indicates
- *                      the thread should exit. Doesn't work so don't worry about it
+ *       Params: data - NULL
  *
  *       Returns: always NULL
  *
@@ -170,8 +170,10 @@ void *customer_routine(void *data){
 /*************************************************************************************
  * main - Standard C main function for our storefront.
  *
- *		Expected params: pctest <num_customers> <max_items>
- *				max_items - how many items will be produced before the shopkeeper closes
+ *	Expected params: \.babyyoda <buffer_size> <num_customers> <max_items>
+ *			buffer_size - the maximum number of items that can be stored on the shelf
+ *			num_customers - the number of customers to visit the store
+ *			max_items - how many items will be produced before the shopkeeper closes
  *
  *************************************************************************************/
 
@@ -179,10 +181,13 @@ int main(int argv, const char *argc[]){
 
     // ------------------------------------ INPUT HANDLING -------------------------------------------
 
-    // Get our argument parameters
+    // Get parameters
     if (argv < 4){
         printf("Invalid parameters. Format: %s <buffer_size> <num_customers> <max_items>\n", argc[0]);
         exit(0);
+    }
+    else if (argv == 5){
+    	timing_slider = (unsigned int)strtol(argc[4], NULL, 10);
     }
 
     int buffer_size = (unsigned int)strtol(argc[1], NULL, 10);
@@ -191,30 +196,42 @@ int main(int argv, const char *argc[]){
 
     // Ensure valid values were provided. If not, warn users and end program.
     try{
-        if (buffer_size < 0){
+        if (buffer_size <= 0){
             throw(1);
         }
 
-        if (num_customers < 0){
+        if (num_customers <= 0){
             throw(2);
         }
 
-        if (max_items < 0){
+        if (max_items <= 0){
             throw(3);
         }
+        
+        // Check timing slider values
+        if (timing_slider <= 0 || timing_slider >= 20){
+        	timing_slider = 10;
+        	printf("\nThe timing scale factor %s is not valid. Timing is set to default.\n", argc[4]);
+        }
 
-        printf("\nWe are expecting %d customers and the shelf can hold %d dolls.\n", num_customers, buffer_size);
+        printf("\nWe are expecting %d customers and the shelf can hold %d doll(s).\n", num_customers, buffer_size);
+        
+        // Check for an unsafe condition (max_items > num_customers)
+        if (max_items > num_customers){
+        	max_items = num_customers;
+        	printf("\nBased on expected customer turnout, max_items has been reduced to %d.\n", max_items);
+        }
     }
     catch (int error_code){
         switch (error_code){
             case 1:
-                printf("Invalid parameters. Please ensure <buffer_size> is an integer value greater than or equal to 0.\n");
+                printf("Invalid parameters. Please ensure <buffer_size> is an integer value greater than 0.\n");
                 break;
             case 2:
-                printf("Invalid parameters. Please ensure <num_customers> is an integer value greater than or equal to 0.\n");
+                printf("Invalid parameters. Please ensure <num_customers> is an integer value greater than 0.\n");
                 break;
             case 3:
-                printf("Invalid parameters. Please ensure <max_items> is an integer value greater than or equal to 0.\n");
+                printf("Invalid parameters. Please ensure <max_items> is an integer value greater than 0.\n");
                 break;
             default:
                 printf("Invalid parameters. Format: %s <buffer_size> <num_customers> <max_items>\n", argc[0]);
@@ -259,8 +276,8 @@ int main(int argv, const char *argc[]){
         // Update pointer to last customer in line
         last_customer++;
 
-        // Random sleep to vary customer arrival (1 - 10 seconds)
-        usleep((useconds_t)(rand() % 1000000));
+        // Random sleep to vary customer arrival (1 - 5 seconds)
+        usleep((useconds_t)(rand() % 500000));
     };
 
     // Wait for Bob to finish making dolls
@@ -286,7 +303,7 @@ int main(int argv, const char *argc[]){
 		}
 	}
 
-	// We are exiting, clean up
+	// Clean up
 	delete empty;
 	delete full;
     free(start_of_shelf);

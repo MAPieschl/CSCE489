@@ -3,8 +3,7 @@
 #include "Semaphore.h"
 
 /*************************************************************************************
- * Semaphore (constructor) - this should take count and place it into a local variable.
- *						Here you can do any other initialization you may need.
+ * Semaphore (constructor) - creates a generic semaphore
  *
  *    Params:  count - initialization count for the semaphore
  *
@@ -17,8 +16,7 @@ Semaphore::Semaphore(int count){
 }
 
 /*************************************************************************************
- * ~Semaphore (destructor) - called when the class is destroyed. Clean up any dynamic
- *						memory.
+ * ~Semaphore (destructor) - clears waiting items in the semaphore
  *
  *************************************************************************************/
 
@@ -27,12 +25,12 @@ Semaphore::~Semaphore(){
 }
 
 /*************************************************************************************
- * wait - implement a standard wait Semaphore method here
+ * wait - standard wait semaphore method with additional protections for concurrency
  *
  *************************************************************************************/
 
 void Semaphore::wait(){
-    int queue_lock = pthread_mutex_lock(&queue_mutex);
+    queue_lock = pthread_mutex_lock(&queue_mutex);
     while (this->value <= 0 && this->clear_semaphore == 0){
         continue;
     }
@@ -44,7 +42,7 @@ void Semaphore::wait(){
 }
 
 /*************************************************************************************
- * signal - implement a standard signal Semaphore method here
+ * signal - standard signal Semaphore method
  *
  *************************************************************************************/
 

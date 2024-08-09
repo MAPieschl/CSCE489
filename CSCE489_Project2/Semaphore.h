@@ -10,6 +10,7 @@ public:
     int value;
     int clear_semaphore;
     pthread_mutex_t queue_mutex;
+    int queue_lock;
 
     // Constructor & destructor methods
     Semaphore(int count);
