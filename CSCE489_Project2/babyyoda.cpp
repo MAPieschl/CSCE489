@@ -183,7 +183,7 @@ int main(int argv, const char *argc[]){
 
     // Get parameters
     if (argv < 4){
-        printf("Invalid parameters. Format: %s <buffer_size> <num_customers> <max_items>\n", argc[0]);
+        printf("Invalid parameters. Format: %s <buffer_size> <num_customers> <max_items> optional: <timing_slider>\n", argc[0]);
         exit(0);
     }
     else if (argv == 5){
