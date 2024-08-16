@@ -1,6 +1,11 @@
 #ifndef ANIMATION_H
 #define ANIMATION_H
 
+#define TIME_CONSTANT 100000
+#define USEC_SCALER 1000000
+#define NSEC_SCALER 1000000000
+#define REFRESH_PERIOD_S 0.1
+
 const int TERMINAL_WIDTH = 80;
 const int TERMINAL_HEIGHT = 23;
 
@@ -21,11 +26,9 @@ public:
     int ball_vx;
     int ball_vy;
     
-    double start_time;
-    double end_time;
-    double time_warp;
-    double time_warp_ave;
-    double time_warp_buffer[100];
+    struct timespec ts;
+    double last_move;
+    double this_move;
 
     // Constructor & destructor methods
     Animation();
@@ -35,7 +38,7 @@ public:
     void clear_screen();
     void move_ball();
     void update_screen();
-
+    
 };
 
 #endif

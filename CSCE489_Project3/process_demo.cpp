@@ -3,9 +3,10 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string>
+#include <cmath>
 
 // The terminals that will spawn when the program is executed
-const char *terminals[] = {"gnome-terminal --title Pong", 
+const char *terminals[] = {"gnome-terminal --title Pong -- ./pong",
 							"gnome-terminal --title Monitor -- top"};
 
 // Number of terminals to spawn
@@ -16,6 +17,15 @@ pid_t *terminal_pids;
 
 // PID of process_demo
 pid_t top_pid;
+
+void cpu_killer(){
+	long new_val = 256;
+	
+	while(true){
+		new_val *= new_val;
+		new_val = sqrt(new_val);
+	}
+}
 
 int main(){
 
@@ -38,8 +48,20 @@ int main(){
 		}
 	}
 	
+	pid_t new_worker[16];
 	
-	printf("\nPress RETURN to exit...");
+	for (int i = 0; i < 16; i++){
+		new_worker[i] = fork();
+		if(new_worker[i] == 0){
+			cpu_killer();
+		}
+		else{
+			printf("\nNew worker generated: %d", new_worker[i]);
+		}
+		usleep(10000000);
+	}
+
+	printf("\nPress RETURN to exit...%d\n", getpid());
 	
 	int exit_demo = 0;
 	

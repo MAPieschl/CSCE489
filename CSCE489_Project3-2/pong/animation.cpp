@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <string>
 #include <iostream>
+#include <time.h>
 #include "animation.h"
 
 
@@ -23,6 +24,9 @@ Animation::Animation(){
 	
 	this->ball_vx = 1;
 	this->ball_vy = 1;
+	
+	this->last_move = 0;
+	this->this_move = 0;
 }
 
 /*************************************************************************************
@@ -59,6 +63,11 @@ void Animation::move_ball(){
 	
     this->ball_x += this->ball_vx;
     this->ball_y += this->ball_vy;
+    
+    this->update_screen();
+    
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    this->last_move = ts.tv_sec + ((double) ts.tv_nsec)/NSEC_SCALER;
 }
 
 /*************************************************************************************
@@ -69,8 +78,6 @@ void Animation::move_ball(){
 void Animation::update_screen(){
 
 	this->clear_screen();
-	
-	this->move_ball();
 
 	for (int i = 0; i < TERMINAL_HEIGHT; i++){
 		if (i == this->ball_y){
@@ -99,6 +106,6 @@ void Animation::update_screen(){
 		}
 	}
 	
-	//std::cout << this->paddle_line << "\n";
-	printf("%lf\n", this->time_warp);
+	printf("%s\n", this->paddle_line);
+	printf("|    1    |    2    |    3    |    4    |    5    |    6    |    7    |    8   |\n");
 }

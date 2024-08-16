@@ -1,0 +1,8 @@
+cd pong
+make
+cd ../pong_controller
+make
+cd ../rt_demo
+make
+./rt_demo
+
