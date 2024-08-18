@@ -2,6 +2,8 @@ cd pong
 make
 cd ../pong_controller
 make
+cd ../stressor
+make
 cd ../rt_demo
 make
 ./rt_demo

@@ -16,6 +16,9 @@ private:
 	
 public:
     // Instance variables
+    bool start_game;
+    bool run_game;
+    int next_paddle_position;
     int paddle_position;
     int paddle_width;
     char paddle_line[TERMINAL_WIDTH - 1];
@@ -36,7 +39,8 @@ public:
 
     // Additional methods
     void clear_screen();
-    void move_ball();
+    bool move_ball();
+    void reset_ball();
     void update_screen();
     
 };

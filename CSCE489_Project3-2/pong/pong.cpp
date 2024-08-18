@@ -14,36 +14,60 @@
 Animation *animate = NULL;
 
 int pong_pipe;
+int gnome_pipe;
 
 // temp - need to link rt_demo.h
-const char fifo_path[] = {"../temp/fifo"};
+const char control_path[] = {"../temp/ctl_fifo"};
+const char gnome_path[] = {"../temp/gnome_fifo"};
+
+bool get_paddle_position(){
+	read(pong_pipe, &animate->next_paddle_position, sizeof(animate->next_paddle_position));
+	
+	if(animate->next_paddle_position == 9){
+		return false;
+	}
+	
+	if(animate->next_paddle_position > 0 && animate->next_paddle_position <= 8 && animate->start_game == false){
+		animate->paddle_position = animate->next_paddle_position - 1;
+		animate->start_game = true;
+	}
+	
+	if(animate->next_paddle_position - 1 != animate->paddle_position){
+		animate->paddle_position = animate->next_paddle_position - 1;
+		animate->update_screen();
+	}
+	
+	return true;
+}
 
 void *run(void *data){
-
-	int next_paddle = 4;
-
-	while(true){
+	while(animate->run_game == true){
 		clock_gettime(CLOCK_MONOTONIC, &(animate->ts));
 		animate->this_move = animate->ts.tv_sec + ((double) animate->ts.tv_nsec)/NSEC_SCALER;
 		
-		if(floor((animate->this_move - animate->last_move)/REFRESH_PERIOD_S)){
-			animate->move_ball();
+		animate->run_game = get_paddle_position();
+		
+		if(floor((animate->this_move - animate->last_move)/REFRESH_PERIOD_S) && animate->start_game == true){
+			animate->start_game = animate->move_ball();
 		}
-		
-		read(pong_pipe, &next_paddle, sizeof(next_paddle));
-		
-		if(next_paddle != animate->paddle_position){
-			animate->paddle_position = next_paddle;
-			animate->update_screen();
+		else if(animate->start_game == false){
+			animate->reset_ball();
 		}
 	}
+
 	
 	return data;
 }
 
 int main(){
+
+	pid_t my_pid = getpid();
 	
-	pong_pipe = open(fifo_path, O_RDONLY);
+	gnome_pipe = open(gnome_path, O_RDWR);
+	
+	int ret = write(gnome_pipe, &my_pid, sizeof(pid_t));
+	
+	pong_pipe = open(control_path, O_RDONLY | O_NONBLOCK);
 
 	pthread_t animation_thread;
 	

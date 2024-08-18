@@ -16,7 +16,10 @@
  *************************************************************************************/
 
 Animation::Animation(){
-	this->paddle_position = 4;
+	this->start_game = false;
+	this->run_game = true;
+	
+	this->paddle_position = 0;
 	this->paddle_width = 10;
 	
 	this->ball_x = TERMINAL_WIDTH/2;
@@ -51,14 +54,22 @@ void Animation::clear_screen(){
  *
  *************************************************************************************/
 
-void Animation::move_ball(){
+bool Animation::move_ball(){
+
+	bool on_paddle = this->ball_x >= this->paddle_width*this->paddle_position && this->ball_x <= this->paddle_width*(this->paddle_position + 1);
 
 	if(this->ball_x <= 0 || this->ball_x >= TERMINAL_WIDTH){
 		this->ball_vx *= -1;
 	}
 	
-	if(this->ball_y <= 0 || this->ball_y >= TERMINAL_HEIGHT - 3){
+	if(this->ball_y <= 0 || (this->ball_y >= TERMINAL_HEIGHT - 2 && on_paddle)){
 		this->ball_vy *= -1;
+	}
+	else if(this->ball_y >= TERMINAL_HEIGHT && !on_paddle){
+		this->next_paddle_position = 0;
+		this->reset_ball();
+    	this->update_screen();
+		return false;
 	}
 	
     this->ball_x += this->ball_vx;
@@ -68,6 +79,20 @@ void Animation::move_ball(){
     
     clock_gettime(CLOCK_MONOTONIC, &ts);
     this->last_move = ts.tv_sec + ((double) ts.tv_nsec)/NSEC_SCALER;
+    
+    return true;
+}
+
+/*************************************************************************************
+ * wait - standard wait semaphore method with additional protections for concurrency
+ *
+ *************************************************************************************/
+
+void Animation::reset_ball(){
+	
+	this->ball_x = TERMINAL_WIDTH/2;
+	this->ball_y = TERMINAL_HEIGHT/2;
+	
 }
 
 /*************************************************************************************
@@ -77,7 +102,7 @@ void Animation::move_ball(){
 
 void Animation::update_screen(){
 
-	this->clear_screen();
+	//this->clear_screen();
 
 	for (int i = 0; i < TERMINAL_HEIGHT; i++){
 		if (i == this->ball_y){
@@ -98,7 +123,7 @@ void Animation::update_screen(){
 	}
 	
 	for (int i = 0; i < TERMINAL_WIDTH; i++){
-		if(i < this->paddle_width*paddle_position || i > this->paddle_width*(this->paddle_position + 1)){
+		if(i < this->paddle_width*this->paddle_position || i > this->paddle_width*(this->paddle_position + 1)){
 			this->paddle_line[i] = ' ';
 		}
 		else{
