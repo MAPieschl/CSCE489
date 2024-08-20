@@ -18,6 +18,7 @@
 Animation::Animation(){
 	this->start_game = false;
 	this->run_game = true;
+	this->strace = false;
 	
 	this->paddle_position = 0;
 	this->paddle_width = 10;
@@ -102,7 +103,9 @@ void Animation::reset_ball(){
 
 void Animation::update_screen(){
 
-	//this->clear_screen();
+	if(this->strace == false){
+		this->clear_screen();
+	}
 
 	for (int i = 0; i < TERMINAL_HEIGHT; i++){
 		if (i == this->ball_y){
@@ -133,4 +136,5 @@ void Animation::update_screen(){
 	
 	printf("%s\n", this->paddle_line);
 	printf("|    1    |    2    |    3    |    4    |    5    |    6    |    7    |    8   |\n");
+	printf("Time Stretch:  %lf\ns", this->time_stretch);
 }

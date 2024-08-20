@@ -41,13 +41,16 @@ bool get_paddle_position(){
 }
 
 void *run(void *data){
+
 	while(animate->run_game == true){
 		clock_gettime(CLOCK_MONOTONIC, &(animate->ts));
 		animate->this_move = animate->ts.tv_sec + ((double) animate->ts.tv_nsec)/NSEC_SCALER;
 		
 		animate->run_game = get_paddle_position();
 		
-		if(floor((animate->this_move - animate->last_move)/REFRESH_PERIOD_S) && animate->start_game == true){
+		animate->time_stretch = (animate->this_move - animate->last_move)/REFRESH_PERIOD_S;
+		
+		if(floor(animate->time_stretch) && animate->start_game == true){
 			animate->start_game = animate->move_ball();
 		}
 		else if(animate->start_game == false){
@@ -59,7 +62,9 @@ void *run(void *data){
 	return data;
 }
 
-int main(){
+int main(int argv, char *argc[]){
+
+	printf("%d\n", argv);
 
 	pid_t my_pid = getpid();
 	
@@ -72,6 +77,13 @@ int main(){
 	pthread_t animation_thread;
 	
 	animate = new Animation();
+
+	if(argv > 1){
+		if(argc[1] == "-s"){
+			animate->strace = true;
+			printf("Pong game is in tracing mode...\n");
+		}
+	}
 	
 	pthread_create(&animation_thread, NULL, run, NULL);
 	

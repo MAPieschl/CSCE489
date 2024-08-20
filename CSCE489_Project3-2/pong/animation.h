@@ -18,6 +18,7 @@ public:
     // Instance variables
     bool start_game;
     bool run_game;
+    bool strace;
     int next_paddle_position;
     int paddle_position;
     int paddle_width;
@@ -32,6 +33,7 @@ public:
     struct timespec ts;
     double last_move;
     double this_move;
+    double time_stretch;
 
     // Constructor & destructor methods
     Animation();

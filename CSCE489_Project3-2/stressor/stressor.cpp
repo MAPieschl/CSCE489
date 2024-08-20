@@ -7,7 +7,7 @@
 #include <time.h>
 #include <fcntl.h>
 
-#define STRESSOR_LAUNCH_US 1000000
+#define STRESSOR_LAUNCH_US 2000000
 
 int gnome_pipe;
 
@@ -60,16 +60,16 @@ int main(int argv, char *argc[]) {
 	printf("Done creating stressors, sending PID...\n");
 	
 	ret = write(gnome_pipe, &my_pid, sizeof(pid_t));
-	printf("Write return code: %d\n", ret);
+	printf("Return code: %d\n", ret);
 	
 	msg = 1;
 	
-	printf("Sending message...\n");
+	printf("Sending complete message...\n");
 	write(gnome_pipe, &msg, sizeof(int));
-	printf("Write return code: %d\n", ret);
+	printf("Return code: %d\n", ret);
 	
-	while(msg != 0){
-		read(gnome_pipe, &msg, sizeof(int));
+	while(true){
+		//read(gnome_pipe, &msg, sizeof(int));
 	}
 
 	return 0;
