@@ -35,8 +35,6 @@ public:
     double last_move;
     double this_move;
     double time_stretch;
-    double time_stretch_history[TIME_STRETCH_FIFO_SIZE];
-    double time_stretch_average;
 
     // Constructor & destructor methods
     Animation();
