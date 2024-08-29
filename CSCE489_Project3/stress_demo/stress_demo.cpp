@@ -7,7 +7,7 @@
 #include <time.h>
 #include <fcntl.h>
 
-#define STRESSOR_LAUNCH_US 1000000
+#define STRESSOR_LAUNCH_US 100000
 
 const char *stressor_terminal[] = {"gnome-terminal --title stress-ng -- stress-ng --cpu 1"};			
 

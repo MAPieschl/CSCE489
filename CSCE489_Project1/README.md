@@ -17,7 +17,7 @@
 
 **1. Installation**
 
-Linux installation steps are shown below. Please note that all CSCE489 projects will be cloned into the CSCE489 folder.
+Linux installation steps are shown below. Please note that all CSCE489 projects will be cloned into the CSCE489 folder.z
 
     git clone https://github.com/MAPieschl/CSCE489.git
 

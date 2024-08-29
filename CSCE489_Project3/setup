@@ -1,3 +1,4 @@
+sudo apt install stress-ng
 cd pong
 make
 cd ../pong_controller
@@ -6,5 +7,4 @@ cd ../stressor
 make
 cd ../rt_demo
 make
-./rt_demo
-
+cd ..

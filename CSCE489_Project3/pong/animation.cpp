@@ -31,6 +31,12 @@ Animation::Animation(){
 	
 	this->last_move = 0;
 	this->this_move = 0;
+	
+	this->time_stretch = 1;
+	
+	for (int i = 0; i < TIME_STRETCH_FIFO_SIZE; i++){
+		this->time_stretch_history[i] = 1;
+	}
 }
 
 /*************************************************************************************
@@ -78,7 +84,7 @@ bool Animation::move_ball(){
     
     this->update_screen();
     
-    clock_gettime(CLOCK_MONOTONIC, &ts);
+    clock_gettime(CLOCK_REALTIME, &ts);
     this->last_move = ts.tv_sec + ((double) ts.tv_nsec)/NSEC_SCALER;
     
     return true;
@@ -136,5 +142,20 @@ void Animation::update_screen(){
 	
 	printf("%s\n", this->paddle_line);
 	printf("|    1    |    2    |    3    |    4    |    5    |    6    |    7    |    8   |\n");
-	printf("Time Stretch:  %lf\ns", this->time_stretch);
+	
+	this->time_stretch_average = 0;
+	
+	for (int i = 0; i < (TIME_STRETCH_FIFO_SIZE - 1); i++){
+		this->time_stretch_history[i] = this->time_stretch_history[i + 1];
+		this->time_stretch_average += time_stretch_history[i];
+	}
+	
+	this->time_stretch_history[TIME_STRETCH_FIFO_SIZE - 1] = this->time_stretch;
+	this->time_stretch_average += this->time_stretch;
+	this->time_stretch_average /= TIME_STRETCH_FIFO_SIZE;
+	
+	float percent_time_stretch = (this->time_stretch - 1) * 100;
+	float percent_time_stretch_ave = (this->time_stretch_average - 1) * 100;
+	
+	printf("Time Stretch:  %lf\%\tTime Stretch Moving Average:  %lf\%\n", this->time_stretch, this->time_stretch_average);
 }

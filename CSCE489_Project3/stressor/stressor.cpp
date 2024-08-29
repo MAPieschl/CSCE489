@@ -7,7 +7,7 @@
 #include <time.h>
 #include <fcntl.h>
 
-#define STRESSOR_LAUNCH_US 2000000
+#define STRESSOR_LAUNCH_US 500000
 
 int gnome_pipe;
 

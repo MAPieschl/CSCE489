@@ -48,7 +48,9 @@ void wait_for_user(){
 	char user_in = 0;
 	
 	while(user_in !='y'){
-		printf("Would you like to continue (y)? ");
+		if(user_in == 0){
+			printf("Would you like to continue (y)? ");
+		}
 		scanf("%c", &user_in);
 	}
 	
@@ -84,36 +86,6 @@ int main(){
 	
 	wait_for_user();
 	
-	for(int i = 0; i < num_child_stressors; i++){
-		printf("Creating child to create grandchild stressors...\n");
-		system(stress_terminals[0]);
-		read(gnome_pipe, next_pid, sizeof(pid_t));
-		printf("Proc %d stored at %p\n", *next_pid, next_pid);
-		next_pid++;
-	}
-	
-	while(continue_simulation == false){
-		printf("Waiting for: %d\n", *(next_pid - 1));
-		continue_simulation = wait_for_msg(*(next_pid - 1), 1);
-	}
-	
-	wait_for_user();
-	
-	// Kill Child Stressor Process
-	next_pid--;
-	kill(*next_pid, SIGKILL);
-	
-	printf("Creating child stressors...\n");
-	for(int i = 0; i < num_sibling_stressors; i++){
-		system(stress_terminals[1]);
-		read(gnome_pipe, next_pid, sizeof(pid_t));
-		printf("Proc %d stored at %p\n", *next_pid, next_pid);
-		wait_for_msg(*next_pid, 1);
-		next_pid++;
-	}
-	
-	wait_for_user();
-	
 	printf("Creating additional child stressors...\n");
 	for(int i = 0; i < num_sibling_stressors; i++){
 		system(stress_terminals[1]);
@@ -136,13 +108,53 @@ int main(){
 	
 	wait_for_user();
 	
-	pid_t *stressor_pid = terminal_pids + num_pong_terminals;
+	for(int i = 0; i < num_child_stressors; i++){
+		printf("Creating child to create grandchild stressors...\n");
+		system(stress_terminals[0]);
+		read(gnome_pipe, next_pid, sizeof(pid_t));
+		printf("Proc %d stored at %p\n", *next_pid, next_pid);
+		next_pid++;
+	}
+	
+	while(continue_simulation == false){
+		printf("Waiting for: %d\n", *(next_pid - 1));
+		continue_simulation = wait_for_msg(*(next_pid - 1), 1);
+	}
+	
+	wait_for_user();
+	
+	// Kill Child Stressor Process
+	next_pid--;
+	kill(*next_pid, SIGKILL);
+	
+	printf("Creating child stressor for real-time demo...\n");
+	
+	printf("Creating additional child stressors...\n");
 	for(int i = 0; i < num_sibling_stressors; i++){
-		ret = setpgid(*stressor_pid, *(terminal_pids + num_pong_terminals));
-		if(ret < 0){
-			printf("Failed to set group ID for %d\n", *stressor_pid);
+		system(stress_terminals[1]);
+		read(gnome_pipe, next_pid, sizeof(pid_t));
+		printf("Proc %d stored at %p\n", *next_pid, next_pid);
+		wait_for_msg(*next_pid, 1);
+		next_pid++;
+	}
+	
+	
+	wait_for_user();
+	
+	// Kill Child Stressor Process
+	next_pid--;
+	kill(*next_pid, SIGKILL);
+	
+	// Cleanup
+	int num_open_procs = next_pid - terminal_pids;
+	int exit_code;
+	
+	for(int i = 0; i < num_open_procs; i++){
+		next_pid--;
+		exit_code = kill(*next_pid, SIGKILL);
+		if(exit_code != 0){
+			printf("Error while killing proc %d", *next_pid);
 		}
-		stressor_pid++;
 	}
 
 	return 0;

@@ -43,7 +43,7 @@ bool get_paddle_position(){
 void *run(void *data){
 
 	while(animate->run_game == true){
-		clock_gettime(CLOCK_MONOTONIC, &(animate->ts));
+		clock_gettime(CLOCK_REALTIME, &(animate->ts));
 		animate->this_move = animate->ts.tv_sec + ((double) animate->ts.tv_nsec)/NSEC_SCALER;
 		
 		animate->run_game = get_paddle_position();
