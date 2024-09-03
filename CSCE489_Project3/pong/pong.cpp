@@ -9,14 +9,12 @@
 #include <time.h>
 #include <cmath>
 #include "animation.h"
-//#include "../rt_demo/rt_demo.h"
 
 Animation *animate = NULL;
 
 int pong_pipe;
 int gnome_pipe;
 
-// temp - need to link rt_demo.h
 const char control_path[] = {"../temp/ctl_fifo"};
 const char gnome_path[] = {"../temp/gnome_fifo"};
 
@@ -39,6 +37,10 @@ bool get_paddle_position(){
 	
 	return true;
 }
+
+/*
+*  run() - primary game loop
+*/
 
 void *run(void *data){
 
@@ -64,20 +66,22 @@ void *run(void *data){
 
 int main(int argv, char *argc[]){
 
-	printf("%d\n", argv);
-
+	// Open pipe with rt_demo, send PID for tracking
 	pid_t my_pid = getpid();
 	
 	gnome_pipe = open(gnome_path, O_RDWR);
 	
 	int ret = write(gnome_pipe, &my_pid, sizeof(pid_t));
 	
+	// Open pipe with pong_controller
 	pong_pipe = open(control_path, O_RDONLY | O_NONBLOCK);
 
+	// Instatiate animation thread
 	pthread_t animation_thread;
 	
 	animate = new Animation();
 
+	// Optional tracing mode
 	if(argv > 1){
 		if(argc[1] == "-s"){
 			animate->strace = true;

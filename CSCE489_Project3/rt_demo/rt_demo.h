@@ -15,8 +15,9 @@ const int num_monitor_terminals = 1;
 
 const char *stress_terminals[] = {"gnome-terminal --title Stressor -- ./../stressor/stressor 10",
 								"gnome-terminal --title Stressor -- ./../stressor/stressor 1"};	
-const int num_stress_terminals = 2;
 const int num_child_stressors = 1;
 const int num_sibling_stressors = 10;
+
+const int pid_buffer_size = 32;
 
 #endif

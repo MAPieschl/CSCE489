@@ -9,9 +9,9 @@
 
 
 /*************************************************************************************
- * Semaphore (constructor) - creates a generic semaphore
+ * Animation (constructor) - assigns initial values for animation
  *
- *    Params:  count - initialization count for the semaphore
+ *    Params:  none
  *
  *************************************************************************************/
 
@@ -36,7 +36,7 @@ Animation::Animation(){
 }
 
 /*************************************************************************************
- * ~Semaphore (destructor) - clears waiting items in the semaphore
+ * ~Animation (destructor) - Not used
  *
  *************************************************************************************/
 
@@ -44,7 +44,7 @@ Animation::~Animation(){
 }
 
 /*************************************************************************************
- * wait - standard wait semaphore method with additional protections for concurrency
+ * clear_screen() - clears standard terminal screen (ChatGPT)
  *
  *************************************************************************************/
 
@@ -53,7 +53,9 @@ void Animation::clear_screen(){
 }
 
 /*************************************************************************************
- * wait - standard wait semaphore method with additional protections for concurrency
+ * move_ball() - calculates next ball position and updates screen
+ *
+ * returns  true - ball still in play // false - ball out of bounds
  *
  *************************************************************************************/
 
@@ -87,7 +89,7 @@ bool Animation::move_ball(){
 }
 
 /*************************************************************************************
- * wait - standard wait semaphore method with additional protections for concurrency
+ * reset_ball() - sets ball to center of screen
  *
  *************************************************************************************/
 
@@ -99,7 +101,7 @@ void Animation::reset_ball(){
 }
 
 /*************************************************************************************
- * wait - standard wait semaphore method with additional protections for concurrency
+ * update_screen() - draws game on screen
  *
  *************************************************************************************/
 
