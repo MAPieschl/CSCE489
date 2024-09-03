@@ -1,0 +1,9 @@
+cd pong
+make clean
+cd ../pong_controller
+make clean
+cd ../stressor
+make clean
+cd ../rt_demo
+make clean
+cd ..

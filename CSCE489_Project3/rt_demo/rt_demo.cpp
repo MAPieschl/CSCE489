@@ -94,6 +94,10 @@ void end_simulation(){
 	return;
 }
 
+/*
+*  Optional function to display PID buffer for debugging
+*/
+
 void show_buffer(pid_t *buffer_start, pid_t *next_ptr, int buffer_size){
 
 	for(int i = 0; i < buffer_size; i++){
@@ -109,7 +113,7 @@ void show_buffer(pid_t *buffer_start, pid_t *next_ptr, int buffer_size){
 }
 
 /* 
-*  Main procedure for real-time process simualtion
+*  Main procedure for real-time process simulation
 */
 int main(){
 	
@@ -204,6 +208,7 @@ int main(){
 		return 0;
 	}
 	
+	// Kill child stressors for next simulation
 	printf("Killing additional child stressors...\n");
 	for(int i = 0; i < num_sibling_stressors; i++){
 		next_pid--;
@@ -215,6 +220,8 @@ int main(){
 	
 	//show_buffer(terminal_pids, next_pid, pid_buffer_size);
 	
+	
+	// Creast child terminal with grandchild stressors
 	for(int i = 0; i < num_child_stressors; i++){
 		printf("Creating child to create grandchild stressors...\n");
 		system(stress_terminals[0]);
@@ -242,6 +249,7 @@ int main(){
 		return 0;
 	}
 	
+	// Set stressor terminal to nice = -20
 	sprintf(command_buffer, "sudo renice -n -20 -p %d", *(next_pid - 1));
 	system(command_buffer);
 	
@@ -253,11 +261,11 @@ int main(){
 		return 0;
 	}
 	
-	// Resest nice value for child stressor
+	// Reset nice value for child stressor
 	sprintf(command_buffer, "sudo renice -n 0 -p %d", *(next_pid - 1));
 	system(command_buffer);
 	
-	// Resest nice value for pong game
+	// Reset nice value for pong game
 	sprintf(command_buffer, "sudo renice -n 0 -p %d", *terminal_pids);
 	system(command_buffer);
 	
@@ -265,6 +273,7 @@ int main(){
 	*	Real-time pong simulation 
 	*/
 	
+	// Set pong game to SCHED_RR with priority 2
 	sprintf(command_buffer, "sudo chrt -r -p 2 %d", *terminal_pids);
 	system(command_buffer);
 	
@@ -278,9 +287,11 @@ int main(){
 		return 0;
 	}
 	
+	// Reset pong game to SCHED_OTHER
 	sprintf(command_buffer, "sudo chrt -o -p 0 %d", *terminal_pids);
 	system(command_buffer);
 	
+	// Set stressor terminal to SCHED_RR with priority 2
 	sprintf(command_buffer, "sudo chrt -r -p 2 %d", *(next_pid - 1));
 	system(command_buffer);
 	
@@ -294,6 +305,7 @@ int main(){
 		return 0;
 	}
 	
+	// Set real time runtime to 50% of period
 	system("sudo sh -c 'echo 500000 > /proc/sys/kernel/sched_rt_runtime_us'");
 	
 	printf("\n\nNotice the reduction in the real-time stressor CPU usage to 50 percent and the improved performance of the pong game. The 95 percent CPU allocation is a Linux default, but modifiable value. Compared to earlier in the simulation when the pong game was allocated ~50 percent CPU time. This is presumably due to the non-preemptive nature of the real-time scheduler, ensuring that all other processes (under CFS) are only addressed once every 500ms which was the value set in the previous step for the real-time runtime value. By maintaining the ratio of sched_rt_runtime_us/sched_rt_period_us = 50, but reducing the total period, we can allow the CFS shorter, but more frequent bursts to improve the user interface of Ubuntu. For these purposes, we'll increase frequency (i.e. reduce the period) by two orders of magnitude. Note that this will counteract improved system performance to some degree due to the increased overhead of more frequent process switching.\n\n");
@@ -304,6 +316,7 @@ int main(){
 		return 0;
 	}
 	
+	// Reduce real time period and runtime to by one order of magnitude to decrease latency
 	system("sudo sh -c 'echo 5000 > /proc/sys/kernel/sched_rt_runtime_us'");
 	system("sudo sh -c 'echo 10000 > /proc/sys/kernel/sched_rt_period_us'");
 	
@@ -315,6 +328,7 @@ int main(){
 		return 0;
 	}
 	
+	// Cleanup real time parameters
 	system("sudo sh -c 'echo 950000 > /proc/sys/kernel/sched_rt_runtime_us'");
 	system("sudo sh -c 'echo 1000000 > /proc/sys/kernel/sched_rt_period_us'");
 	

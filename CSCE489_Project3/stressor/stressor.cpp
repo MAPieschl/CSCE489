@@ -35,14 +35,17 @@ int main(int argv, char *argc[]) {
 	int msg;
 	int ret;
 
+	// Open pipe with rt_demo, send PID for tracking
 	pid_t my_pid = getpid();
 	gnome_pipe = open(gnome_path, O_RDWR);
 	ret = write(gnome_pipe, &my_pid, sizeof(pid_t));
 	printf("Sent PID# %d and received return code %d\n", my_pid, ret);
 	
+	// Log stressors in the heap
 	stressors = (pid_t *) malloc(num_stressors*sizeof(pthread_t));
 	next_stressor = stressors;
 	
+	// Fork stressors
 	for(int i = 0; i < num_stressors; i++){
 		*next_stressor = fork();
 		
@@ -56,6 +59,7 @@ int main(int argv, char *argc[]) {
 		}
 	}
 	
+	// Send "job complete" message to rt_demo
 	usleep(1000000);
 	printf("Done creating stressors, sending PID...\n");
 	
@@ -69,7 +73,7 @@ int main(int argv, char *argc[]) {
 	printf("Return code: %d\n", ret);
 	
 	while(true){
-		//read(gnome_pipe, &msg, sizeof(int));
+		// catch - kill externally
 	}
 
 	return 0;

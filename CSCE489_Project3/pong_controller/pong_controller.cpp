@@ -13,6 +13,7 @@ int main() {
 
 	int input;
 
+	// Open pipe with rt_demo, send PID for tracking
 	pid_t my_pid = getpid();
 	
 	gnome_pipe = open(gnome_path, O_RDWR);
@@ -22,7 +23,8 @@ int main() {
 	pong_pipe = open(control_path, O_WRONLY);
 	
 	printf("Write pipe: %d\n", pong_pipe);
-
+	
+	// Wait for user input
 	while(input != 9){
 		scanf("%d", &input);
 		write(pong_pipe, &input, sizeof(input)); 
